@@ -1,20 +1,14 @@
-import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
+import app from "./src/app.js";
 import pool from "./src/config/db.js";
 import { initDatabase } from "./src/config/initDb.js";
-import { seedDatabase } from "./src/config/seed.js"; // Import hàm seed
-import authRoutes from "./src/routes/authRoutes.js";
+import { seedDatabase } from "./src/config/seed.js";
 
 dotenv.config();
 
-const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
-app.use(express.json());
-app.use("/api/auth", authRoutes);
-
+// Khởi tạo PostgreSQL Database nếu có cấu hình
 pool
   .connect()
   .then(async (client) => {
@@ -28,12 +22,9 @@ pool
     await seedDatabase();
   })
   .catch((err) => {
-    console.error("❌ Ket noi Database that bai:", err.message);
+    console.warn("⚠️ Khong the ket noi Database PostgreSQL:", err.message);
+    console.log("ℹ️ Backend se su dung Mock In-Memory Data cho cac chuc nang va kiem thu.");
   });
-
-app.get("/api/health", (req, res) => {
-  res.json({ status: "OK", message: "HIS Hospital Backend is running!" });
-});
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
