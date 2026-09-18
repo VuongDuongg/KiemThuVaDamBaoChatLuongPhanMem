@@ -1,12 +1,20 @@
 import dotenv from "dotenv";
+import http from "node:http";
 import app from "./src/app.js";
 import pool from "./src/config/db.js";
 import { initDatabase } from "./src/config/initDb.js";
 import { seedDatabase } from "./src/config/seed.js";
+import { socketManager } from "./src/sockets/socketManager.js";
 
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
+
+// Tạo HTTP Server kết hợp Express App
+const server = http.createServer(app);
+
+// Khởi tạo Socket.IO Real-time Event Mesh
+socketManager.init(server);
 
 // Khởi tạo PostgreSQL Database nếu có cấu hình
 pool
@@ -23,9 +31,10 @@ pool
   })
   .catch((err) => {
     console.warn("⚠️ Khong the ket noi Database PostgreSQL:", err.message);
-    console.log("ℹ️ Backend se su dung Mock In-Memory Data cho cac chuc nang va kiem thu.");
+    console.log("ℹ️ Backend se su dung In-Memory Store & Repository Pattern cho cac chuc nang va kiem thu.");
   });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+server.listen(PORT, () => {
+  console.log(`🚀 HIS Hospital Server running on http://localhost:${PORT}`);
+  console.log(`⚡ WebSocket Real-time Gateway active on ws://localhost:${PORT}`);
 });
