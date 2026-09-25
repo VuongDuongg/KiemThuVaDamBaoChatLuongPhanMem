@@ -111,7 +111,12 @@ describe("BỘ KIỂM THỬ HỘP ĐEN - THÀNH VIÊN 4: CẬN LÂM SÀNG & PACS
       }
     });
     assert.equal(res.statusCode, 200);
-    assert.equal(res.body.data.status, "COMPLETED");
+    assert.equal(res.body.data.status, "PENDING_APPROVAL");
+    const approved = await request("POST", "/api/lab/orders/2/approve", {
+      approved_by: "BS. Phụ trách xét nghiệm"
+    });
+    assert.equal(approved.statusCode, 200);
+    assert.equal(approved.body.data.status, "COMPLETED");
   });
 
   test("TC08 [EP]: Nhập kết quả rỗng (không có chỉ số và không có kết luận) -> Báo lỗi 400", async () => {

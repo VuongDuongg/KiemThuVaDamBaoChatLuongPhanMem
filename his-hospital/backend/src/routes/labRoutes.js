@@ -5,7 +5,9 @@ import {
   getLabOrderById,
   createLabOrder,
   startLabOrder,
-  updateLabResult
+  updateLabResult,
+  collectLabSample,
+  approveLabResult
 } from "../controllers/labController.js";
 
 const router = express.Router();
@@ -24,10 +26,12 @@ router.post("/orders", createLabOrder);
 
 // POST /api/lab/orders/:id/start - Kỹ thuật viên bắt đầu thực hiện ca CLS
 router.post("/orders/:id/start", startLabOrder);
+router.post("/orders/:id/collect-sample", collectLabSample);
 
 // POST & PUT /api/lab/orders/:id/results - Kỹ thuật viên nhập kết quả CLS
 router.post("/orders/:id/results", updateLabResult);
 router.put("/orders/:id/results", updateLabResult);
 router.put("/orders/:id/result", updateLabResult);
+router.post("/orders/:id/approve", approveLabResult);
 
 export default router;

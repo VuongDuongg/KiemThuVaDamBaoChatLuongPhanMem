@@ -349,6 +349,13 @@ export const generateSeedData = () => {
       price: 120000,
       status: "PROCESSING",
       payment_status: "PAID",
+      specimen: {
+        barcode: "M000002",
+        type: "Máu toàn phần EDTA",
+        collected_at: dayjs().subtract(35, "minute").format("DD/MM/YYYY HH:mm"),
+        received_at: dayjs().subtract(32, "minute").format("DD/MM/YYYY HH:mm"),
+        condition: "Đạt yêu cầu"
+      },
       results: {
         parameters: [
           { param: "Bạch cầu (WBC)", value: 11.8, unit: "G/L", normal_range: "4.0 - 10.0", alert: "HIGH" },

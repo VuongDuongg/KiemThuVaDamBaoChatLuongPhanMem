@@ -6,6 +6,9 @@ import {
   EditOutlined,
   EyeOutlined,
   CheckCircleOutlined,
+  PlayCircleOutlined,
+  SafetyCertificateOutlined,
+  InboxOutlined,
 } from "@ant-design/icons";
 
 const { Option } = Select;
@@ -15,7 +18,10 @@ export default function LabOrderQueue({
   loading = false,
   filters,
   onFilterChange,
+  onCollectSample,
+  onStartOrder,
   onEnterResult,
+  onApproveResult,
   onViewPacs,
 }) {
   const getStatusTag = (status) => {
@@ -24,6 +30,12 @@ export default function LabOrderQueue({
         return <Tag color="warning">Chờ tiếp nhận</Tag>;
       case "PROCESSING":
         return <Tag color="processing">Đang thực hiện</Tag>;
+      case "SAMPLE_COLLECTED":
+        return <Tag color="blue">Đã nhận mẫu</Tag>;
+      case "PENDING_APPROVAL":
+        return <Tag color="gold">Chờ duyệt kết quả</Tag>;
+      case "SAMPLE_REJECTED":
+        return <Tag color="error">Mẫu không đạt</Tag>;
       case "COMPLETED":
         return (
           <Tag color="success" icon={<CheckCircleOutlined />}>
@@ -74,7 +86,17 @@ export default function LabOrderQueue({
       width: 150,
     },
     {
-      title: "Trạng Thái",
+      title: "Thanh toán",
+      dataIndex: "payment_status",
+      key: "payment_status",
+      width: 120,
+      render: (status) => (
+        <Tag color={status === "PAID" ? "success" : "warning"}>
+          {status === "PAID" ? "Đã thanh toán" : "Chờ thanh toán"}
+        </Tag>
+      ),
+    },
+    {
       dataIndex: "status",
       key: "status",
       width: 140,
@@ -88,13 +110,39 @@ export default function LabOrderQueue({
       render: (tech) => tech || <span style={{ color: "#9ca3af" }}>Chưa chỉ định</span>,
     },
     {
+      title: "Mẫu bệnh phẩm",
+      key: "specimen",
+      width: 180,
+      render: (_, record) => record.type === "LAB" ? (
+        record.specimen ? <span>{record.specimen.type}<br /><small>{record.specimen.barcode}</small></span> : <span style={{ color: "#9ca3af" }}>Chưa tiếp nhận mẫu</span>
+      ) : "—",
+    },
+    {
       title: "Thao Tác",
       key: "action",
       width: 160,
       align: "center",
       render: (_, record) => (
-        <Space size={8}>
-          {record.type === "PACS" ? (
+        <Space size={6} wrap>
+          {record.payment_status !== "PAID" ? (
+            <Button size="small" disabled>Chờ thanh toán</Button>
+          ) : record.type === "LAB" && (record.status === "PENDING" || record.status === "SAMPLE_REJECTED") ? (
+            <Button size="small" type="primary" icon={<InboxOutlined />} onClick={() => onCollectSample(record)}>
+              Nhận mẫu
+            </Button>
+          ) : record.status === "PENDING" ? (
+            <Button size="small" type="primary" onClick={() => onStartOrder(record)}>
+              Tiếp nhận
+            </Button>
+          ) : record.type === "LAB" && record.status === "SAMPLE_COLLECTED" ? (
+            <Button size="small" type="primary" icon={<PlayCircleOutlined />} onClick={() => onStartOrder(record)}>
+              Chạy xét nghiệm
+            </Button>
+          ) : record.type === "LAB" && record.status === "PENDING_APPROVAL" ? (
+            <Button size="small" icon={<SafetyCertificateOutlined />} onClick={() => onApproveResult(record)}>
+              Duyệt & phát hành
+            </Button>
+          ) : record.type === "PACS" ? (
             <Button
               size="small"
               icon={<EyeOutlined />}
@@ -106,8 +154,9 @@ export default function LabOrderQueue({
           ) : (
             <Button
               size="small"
-              type={record.status === "COMPLETED" ? "default" : "primary"}
+              type="primary"
               icon={<EditOutlined />}
+              disabled={record.status === "COMPLETED"}
               onClick={() => onEnterResult(record)}
             >
               {record.status === "COMPLETED" ? "Xem kết quả" : "Nhập KQ"}
@@ -139,7 +188,10 @@ export default function LabOrderQueue({
             >
               <Option value="ALL">Tất cả trạng thái</Option>
               <Option value="PENDING">Chờ tiếp nhận</Option>
+              <Option value="SAMPLE_COLLECTED">Đã nhận mẫu</Option>
               <Option value="PROCESSING">Đang thực hiện</Option>
+              <Option value="PENDING_APPROVAL">Chờ duyệt kết quả</Option>
+              <Option value="SAMPLE_REJECTED">Mẫu không đạt</Option>
               <Option value="COMPLETED">Đã có kết quả</Option>
             </Select>
           </Col>

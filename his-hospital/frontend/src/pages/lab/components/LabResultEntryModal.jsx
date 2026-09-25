@@ -74,7 +74,7 @@ export default function LabResultEntryModal({
       open={open}
       onOk={handleOk}
       onCancel={onCancel}
-      okText="Lưu & Phê duyệt kết quả"
+      okText="Lưu kết quả sơ bộ"
       cancelText="Hủy bỏ"
       confirmLoading={confirmLoading}
       width={700}
@@ -90,7 +90,17 @@ export default function LabResultEntryModal({
         <Descriptions.Item label="Dịch vụ xét nghiệm" span={2}>
           <Text strong style={{ color: "#722ed1" }}>{order.service_name}</Text>
         </Descriptions.Item>
+        <Descriptions.Item label="Mã mẫu">
+          <Tag color="blue">{order.specimen?.barcode || "Chưa ghi nhận"}</Tag>
+        </Descriptions.Item>
+        <Descriptions.Item label="Loại mẫu">
+          {order.specimen?.type || "Chưa ghi nhận"}
+        </Descriptions.Item>
       </Descriptions>
+
+      <Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
+        KTV nhập kết quả sau kiểm soát chất lượng. Kết quả chỉ được trả về hồ sơ bệnh án sau bước duyệt chuyên môn.
+      </Text>
 
       <Form form={form} layout="vertical">
         <Row gutter={16}>

@@ -21,6 +21,11 @@ export const invoiceService = {
     return response.data;
   },
 
+  getPendingCharges: async (params = {}) => {
+    const response = await api.get("/invoices/pending-charges", { params });
+    return response.data;
+  },
+
   pay: async (id, data = {}) => {
     const response = await api.post(`/invoices/${id}/pay`, data);
     return response.data;

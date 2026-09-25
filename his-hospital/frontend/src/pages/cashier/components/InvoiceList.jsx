@@ -1,6 +1,12 @@
 import React from "react";
 import { Table, Tag, Space, Button, Input, Select, Card, Row, Col } from "antd";
-import { DollarOutlined, SearchOutlined, CheckCircleOutlined, PrinterOutlined } from "@ant-design/icons";
+import {
+  DollarOutlined,
+  SearchOutlined,
+  CheckCircleOutlined,
+  PrinterOutlined,
+  FileAddOutlined,
+} from "@ant-design/icons";
 
 const { Option } = Select;
 
@@ -11,6 +17,7 @@ export default function InvoiceList({
   onFilterChange,
   onPay,
   onPrint,
+  onCreateInvoice,
 }) {
   const formatVND = (amount) => {
     return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount || 0);
@@ -159,6 +166,21 @@ export default function InvoiceList({
               <Option value="CAN_LAM_SANG">Cận lâm sàng</Option>
               <Option value="TIEN_THUOC">Tiền thuốc</Option>
             </Select>
+          </Col>
+          <Col xs={24} sm={24} md={8} style={{ display: "flex", justifyContent: "flex-end" }}>
+            <Button
+              type="primary"
+              icon={<FileAddOutlined />}
+              onClick={onCreateInvoice}
+              style={{
+                background: "#1677ff",
+                borderColor: "#1677ff",
+                fontWeight: 600,
+                borderRadius: 6,
+              }}
+            >
+              Lập hóa đơn viện phí (UC-THUNGAN-05)
+            </Button>
           </Col>
         </Row>
       </Card>

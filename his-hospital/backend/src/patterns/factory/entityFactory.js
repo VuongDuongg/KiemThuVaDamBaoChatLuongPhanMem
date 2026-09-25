@@ -37,11 +37,14 @@ export class EntityFactory {
       description: data.description || "Thanh toán viện phí",
       total_amount: data.total_amount,
       insurance_discount: data.insurance_discount || 0,
+      insurance_percent: data.insurance_percent || 0,
       patient_pay: data.patient_pay,
       payment_method: data.payment_method || "CHUA_THANH_TOAN",
       status: isPaid ? "PAID" : "UNPAID",
       created_at: dayjs().format("DD/MM/YYYY HH:mm"),
       paid_at: isPaid ? dayjs().format("DD/MM/YYYY HH:mm") : null,
+      reference_id: data.reference_id ?? null,
+      items: data.items || [],
       cashier: data.cashier || "Trần Văn Thu Ngân"
     };
   }
@@ -61,7 +64,7 @@ export class EntityFactory {
       type: service.type,
       price: service.price,
       status: "PENDING",
-      payment_status: "PAID",
+      payment_status: "UNPAID",
       results: null,
       created_at: dayjs().format("DD/MM/YYYY HH:mm"),
       completed_at: null

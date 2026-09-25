@@ -2,6 +2,7 @@ import express from "express";
 import {
   getInvoices,
   getInvoiceStats,
+  getPendingCharges,
   getInvoiceById,
   createInvoice,
   processInvoicePayment
@@ -14,6 +15,9 @@ router.get("/", getInvoices);
 
 // GET /api/invoices/stats - Thống kê doanh thu & viện phí
 router.get("/stats", getInvoiceStats);
+
+// GET /api/invoices/pending-charges - Lập hóa đơn viện phí UC-THUNGAN-05
+router.get("/pending-charges", getPendingCharges);
 
 // GET /api/invoices/:id - Chi tiết hóa đơn
 router.get("/:id", getInvoiceById);

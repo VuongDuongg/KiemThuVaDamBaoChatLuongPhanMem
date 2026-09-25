@@ -27,6 +27,24 @@ export const getInvoiceStats = (req, res) => {
   }
 };
 
+// GET /api/invoices/pending-charges - UC-THUNGAN-05: Lập hóa đơn viện phí
+export const getPendingCharges = (req, res) => {
+  try {
+    const data = invoiceService.getPendingCharges(req.query);
+    res.json({
+      success: true,
+      data
+    });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({
+      success: false,
+      errorCode: error.errorCode || "VALIDATION_ERROR",
+      message: error.message,
+      errors: error.validationErrors
+    });
+  }
+};
+
 // GET /api/invoices/:id - Chi tiết hóa đơn
 export const getInvoiceById = (req, res) => {
   try {

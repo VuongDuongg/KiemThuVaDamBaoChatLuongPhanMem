@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Card, Tabs, message } from "antd";
-import { DollarOutlined, MedicineBoxOutlined } from "@ant-design/icons";
+import { Card, Tabs, message, Button, Space } from "antd";
+import { DollarOutlined, MedicineBoxOutlined, FileAddOutlined } from "@ant-design/icons";
 import { invoiceService } from "../../services/invoiceService";
 import { medicineService } from "../../services/medicineService";
 import RevenueStats from "./components/RevenueStats";
 import InvoiceList from "./components/InvoiceList";
 import PaymentModal from "./components/PaymentModal";
 import MedicineInventory from "./components/MedicineInventory";
+import CreateInvoiceModal from "./components/CreateInvoiceModal";
 
 export default function CashierDashboard() {
   const [invoices, setInvoices] = useState([]);
@@ -26,6 +27,9 @@ export default function CashierDashboard() {
   // Modal payment
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  // Modal lập hóa đơn viện phí UC-THUNGAN-05
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const loadInvoices = async () => {
     setLoadingInvoices(true);
@@ -130,6 +134,7 @@ export default function CashierDashboard() {
                   onFilterChange={setInvoiceFilters}
                   onPay={handleOpenPayment}
                   onPrint={handlePrintReceipt}
+                  onCreateInvoice={() => setIsCreateModalOpen(true)}
                 />
               ),
             },
@@ -153,6 +158,18 @@ export default function CashierDashboard() {
           ]}
         />
       </Card>
+
+      {/* MODAL LẬP HÓA ĐƠN VIỆN PHÍ (UC-THUNGAN-05) */}
+      <CreateInvoiceModal
+        open={isCreateModalOpen}
+        onCancel={() => setIsCreateModalOpen(false)}
+        onSuccess={(newInvoice) => {
+          setIsCreateModalOpen(false);
+          loadInvoices();
+          // Chuyển sang giao diện thực hiện thanh toán (Bước 5)
+          handleOpenPayment(newInvoice);
+        }}
+      />
 
       {/* MODAL THANH TOÁN */}
       <PaymentModal

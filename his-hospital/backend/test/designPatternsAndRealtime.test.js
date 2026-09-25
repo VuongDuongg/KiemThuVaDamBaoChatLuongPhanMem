@@ -101,7 +101,20 @@ describe("BỘ KIỂM THỬ THIẾT KẾ DESIGN PATTERNS & STATE MACHINES (10 TE
     });
     assert.equal(order.status, "PENDING");
 
+    const invoice = invoiceService
+      .getInvoices({ patient_code: "BN000002", item_type: "CAN_LAM_SANG" })
+      .find((item) => item.reference_id === order.id);
+    assert.ok(invoice);
+    invoiceService.processPayment(invoice.id, { payment_method: "TIEN_MAT" });
+    assert.equal(order.payment_status, "PAID");
+
     // 2. KTV tiếp nhận
+    labService.collectSample(order.id, {
+      technician: "KTV. Đặng Quốc Việt",
+      specimen_type: "Máu toàn phần EDTA",
+      barcode: "M000001"
+    });
+    assert.equal(order.status, "SAMPLE_COLLECTED");
     labService.startOrder(order.id, "KTV. Đặng Quốc Việt");
     assert.equal(order.status, "PROCESSING");
 
@@ -113,6 +126,8 @@ describe("BỘ KIỂM THỬ THIẾT KẾ DESIGN PATTERNS & STATE MACHINES (10 TE
         conclusion: "Công thức máu bình thường"
       }
     });
+    assert.equal(order.status, "PENDING_APPROVAL");
+    labService.approveResult(order.id, { approved_by: "BS. Phụ trách xét nghiệm" });
     assert.equal(order.status, "COMPLETED");
 
     // 4. Kiểm tra EMR bác sĩ đã nhận được kết quả

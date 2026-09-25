@@ -152,4 +152,48 @@ describe("BỘ KIỂM THỬ HỘP ĐEN - THÀNH VIÊN 2: THU NGÂN & DƯỢC (10
     assert.equal(res.statusCode, 400);
     assert.match(res.body.message, /phải lớn hơn 0/);
   });
+
+  // =================== UC-THUNGAN-05: LẬP HÓA ĐƠN VIỆN PHÍ ===================
+  test("TC11 [UC-THUNGAN-05 E1.1]: Để trống cả mã bệnh nhân và họ tên -> Báo lỗi E1.1", async () => {
+    const res = await request("GET", "/api/invoices/pending-charges");
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.errorCode, "E1.1");
+    assert.match(res.body.message, /Vui lòng nhập Mã bệnh nhân hoặc Họ tên để tìm kiếm/);
+  });
+
+  test("TC12 [UC-THUNGAN-05 E1.2]: Mã bệnh nhân vượt quá 20 ký tự hoặc chứa ký tự đặc biệt -> Báo lỗi E1.2", async () => {
+    const res = await request("GET", "/api/invoices/pending-charges?patient_id=BN000000000000000000123");
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.errorCode, "E1.2");
+    assert.match(res.body.message, /Mã bệnh nhân không được vượt quá 20 ký tự hoặc chứa ký tự đặc biệt/);
+
+    const resSpecial = await request("GET", "/api/invoices/pending-charges?patient_id=BN01@#");
+    assert.equal(resSpecial.statusCode, 400);
+    assert.equal(resSpecial.body.errorCode, "E1.2");
+    assert.match(resSpecial.body.message, /Mã bệnh nhân không được vượt quá 20 ký tự hoặc chứa ký tự đặc biệt/);
+  });
+
+  test("TC13 [UC-THUNGAN-05 E1.2]: Họ tên bệnh nhân chứa số hoặc ký tự đặc biệt -> Báo lỗi E1.2", async () => {
+    const res = await request("GET", "/api/invoices/pending-charges?patient_name=Nguyen123");
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.errorCode, "E1.2");
+    assert.match(res.body.message, /Họ tên bệnh nhân không hợp lệ/);
+  });
+
+  test("TC14 [UC-THUNGAN-05 E1.3]: Không tìm thấy bệnh nhân trên hệ thống -> Báo lỗi E1.3 (404)", async () => {
+    const res = await request("GET", "/api/invoices/pending-charges?patient_id=BN999999");
+    assert.equal(res.statusCode, 404);
+    assert.equal(res.body.errorCode, "E1.3");
+    assert.match(res.body.message, /Không tìm thấy thông tin bệnh nhân trên hệ thống/);
+  });
+
+  test("TC15 [UC-THUNGAN-05 Happy Path]: Truy xuất danh sách chi phí bệnh nhân hợp lệ -> Data Grid & Summary Block", async () => {
+    const res = await request("GET", "/api/invoices/pending-charges?patient_id=BN000001");
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.success, true);
+    assert.ok(res.body.data.patient);
+    assert.ok(Array.isArray(res.body.data.items));
+    assert.ok(res.body.data.summary);
+    assert.ok(res.body.data.summary.total_amount > 0);
+  });
 });
