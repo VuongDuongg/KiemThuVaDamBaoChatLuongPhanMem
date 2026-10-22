@@ -2,7 +2,7 @@ import { globalData } from "../data/seedData.js";
 
 class MedicineRepository {
   findAll() {
-    return [...globalData.medicines];
+    return globalData.medicines;
   }
 
   findByIdOrCode(idOrCode) {

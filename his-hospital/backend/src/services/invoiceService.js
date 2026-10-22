@@ -187,7 +187,7 @@ class InvoiceService {
         invoice_code: relatedInv?.invoice_code || null,
         reference_id: order.id
       });
-    });
+    }); 
 
     // 3.3. Tiền thuốc từ đơn thuốc (nếu có)
     const consultations = consultationRepository.findByPatientCode(patient.patient_code);
