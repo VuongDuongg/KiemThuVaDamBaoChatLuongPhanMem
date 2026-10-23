@@ -8,7 +8,11 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "test": "node --test test/patientSearch.test.js test/cashierBilling.test.js test/doctorConsultation.test.js test/labPacs.test.js test/designPatternsAndRealtime.test.js test/unitTest_NUnitStyle_3ChucNang.test.js",
-    "test:unit": "node --test test/unitTest_NUnitStyle_3ChucNang.test.js"
+    "test:unit": "node --test test/unitTest_NUnitStyle_3ChucNang.test.js",
+    "test:vitest": "vitest run",
+    "test:vitest:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [],
   "author": "",
@@ -25,6 +29,9 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^10.6.0",
-    "nodemon": "^3.1.14"
+    "@vitest/coverage-v8": "^5.0.5",
+    "@vitest/ui": "^5.0.5",
+    "nodemon": "^3.1.14",
+    "vitest": "^5.0.5"
   }
 }
