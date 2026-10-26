@@ -1,0 +1,42 @@
+{
+  "name": "his-hospital-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Backend API for HIS Hospital System",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "test": "node --test test/patientSearch.test.js test/cashierBilling.test.js test/doctorConsultation.test.js test/labPacs.test.js test/designPatternsAndRealtime.test.js test/unitTest_NUnitStyle_3ChucNang.test.js test/khanh/validators/01_receiveOrder.test.js test/khanh/validators/02_labResult.test.js test/khanh/validators/03_pacs.test.js",
+    "test:unit": "node --test test/unitTest_NUnitStyle_3ChucNang.test.js test/khanh/validators/01_receiveOrder.test.js test/khanh/validators/02_labResult.test.js test/khanh/validators/03_pacs.test.js",
+    "test:validate": "node --test test/khanh/validators/01_receiveOrder.test.js test/khanh/validators/02_labResult.test.js test/khanh/validators/03_pacs.test.js",
+    "test:khanh": "node --test test/khanh/validators/01_receiveOrder.test.js test/khanh/validators/02_labResult.test.js test/khanh/validators/03_pacs.test.js",
+    "test:vuong": "node --test test/vuong/validators/01_lapHoaDon.test.js test/vuong/validators/02_thanhToanHoaDon.test.js test/vuong/validators/03_quanLyThuoc.test.js",
+    "test:vitest": "vitest run",
+    "test:vitest:khanh": "vitest run test/khanh",
+    "test:vitest:vuong": "vitest run test/vuong",
+    "test:vitest:watch": "vitest",
+    "test:ui": "vitest --ui --open",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dayjs": "^1.11.23",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.0",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^10.6.0",
+    "@vitest/coverage-v8": "^5.0.5",
+    "@vitest/ui": "^5.0.5",
+    "nodemon": "^3.1.14",
+    "vitest": "^5.0.5"
+  }
+}
