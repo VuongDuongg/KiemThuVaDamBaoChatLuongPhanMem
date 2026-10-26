@@ -152,23 +152,31 @@ Trong đồ thị C1/C2, mỗi cấu trúc rẽ nhánh `if` được xem như **
 - **Đỉnh 11a:** Nhánh True của 11: `trimmedActive = active_ingredient.trim()`.
 - **Đỉnh 11b:** Nhánh False của 11: `trimmedActive = ""`.
 - **Đỉnh 12-16:** Khối gán `finalExpiry`, đóng gói `newMed`, lưu kho, phát sự kiện và return $\rightarrow$ Kết thúc thành công.
+- **Đỉnh Exit (Kết thúc):** Điểm kết thúc của hàm (hội tụ cả các nhánh kết thúc sớm do ném ngoại lệ và nhánh kết thúc thành công).
 
 ```mermaid
 flowchart TD
-    1((1)) --> 2((2))
+    Start([Bắt đầu]) --> 1((1))
+    1 --> 2((2))
     
     2 -- True --> 3((3))
     2 -- False --> 4((4))
+    
+    3 --> EndNode(((Điểm kết thúc)))
     
     4 --> 5((5))
     
     5 -- True --> 6((6))
     5 -- False --> 7((7))
     
+    6 --> EndNode
+    
     7 --> 8((8))
     
     8 -- True --> 9((9))
     8 -- False --> 10((10))
+    
+    9 --> EndNode
     
     10 --> 11((11))
     
@@ -177,6 +185,7 @@ flowchart TD
     
     11a --> 12_16((12))
     11b --> 12_16
+    12_16 --> EndNode
 ```
 
 ---
@@ -257,13 +266,16 @@ Tại độ đo C3, các biểu thức điều kiện phức hợp được tác
 
 ```mermaid
 flowchart TD
-    1((1)) --> 2a((2a))
+    Start([Bắt đầu]) --> 1((1))
+    1 --> 2a((2a))
     
     2a -- True --> 3((3))
     2a -- False --> 2b((2b))
     
     2b -- True --> 3
     2b -- False --> 4((4))
+    
+    3 --> EndNode(((Điểm kết thúc)))
     
     4 --> 5a((5a))
     
@@ -276,6 +288,8 @@ flowchart TD
     5c -- True --> 6
     5c -- False --> 7((7))
     
+    6 --> EndNode
+    
     7 --> 8a((8a))
     
     8a -- True --> 9((9))
@@ -284,6 +298,8 @@ flowchart TD
     8b -- True --> 9
     8b -- False --> 10((10))
     
+    9 --> EndNode
+    
     10 --> 11((11))
     
     11 -- True --> 11a((11a))
@@ -291,6 +307,7 @@ flowchart TD
     
     11a --> 12_16((12))
     11b --> 12_16
+    12_16 --> EndNode
 ```
 
 ---
@@ -430,6 +447,8 @@ flowchart TD
     N15["15  eventBus.emitEvent('MEDICINE_ADDED', { medicine: newMed })"]
     
     N16["16  return newMed"]
+    
+    ExitNode(((Điểm kết thúc)))
 
     %% Cạnh và nhãn điều kiện
     N1 -->|true| N2
@@ -437,15 +456,21 @@ flowchart TD
     N2 -->|"(!medicine_name || !medicine_name.trim())"| N3
     N2 -->|"~(!medicine_name || !medicine_name.trim())"| N4
     
+    N3 -->|true| ExitNode
+    
     N4 -->|true| N5
     
     N5 -->|"(unit_price === undefined || isNaN(numPrice) || numPrice <= 0)"| N6
     N5 -->|"~(unit_price === undefined || isNaN(numPrice) || numPrice <= 0)"| N7
     
+    N6 -->|true| ExitNode
+    
     N7 -->|true| N8
     
     N8 -->|"(isNaN(numStock) || numStock < 0)"| N9
     N8 -->|"~(isNaN(numStock) || numStock < 0)"| N10
+    
+    N9 -->|true| ExitNode
     
     N10 -->|true| N11
     
@@ -459,6 +484,7 @@ flowchart TD
     N13 -->|true| N14
     N14 -->|true| N15
     N15 -->|true| N16
+    N16 -->|true| ExitNode
 ```
 
 ---
@@ -669,10 +695,13 @@ function executeUpdateMedicine(idOrCode, updateData) {
 
 ```mermaid
 flowchart TD
-    U1((1)) --> U2((2))
+    Start([Bắt đầu]) --> U1((1))
+    U1 --> U2((2))
     
     U2 -- True --> U3((3))
     U2 -- False --> U4_7((4..7))
+    
+    U3 --> EndNode(((Điểm kết thúc)))
     
     U4_7 --> U8((8))
     
@@ -680,6 +709,7 @@ flowchart TD
     U8 -- False --> U10_11((10..11))
     
     U9 --> U10_11
+    U10_11 --> EndNode
 ```
 
 - **Độ phức tạp Cyclomatic của McCabe:**
@@ -710,9 +740,12 @@ Tại câu lệnh 7, biểu thức tìm vị trí `idx`:
 
 ```mermaid
 flowchart TD
-    U1((1)) --> U2((2))
+    Start([Bắt đầu]) --> U1((1))
+    U1 --> U2((2))
     U2 -- True --> U3((3))
     U2 -- False --> U4_6((4..6))
+    
+    U3 --> EndNode(((Điểm kết thúc)))
     
     U4_6 --> U7a((7a))
     U7a -- True --> U8((8))
@@ -722,6 +755,7 @@ flowchart TD
     U8 -- True --> U9((9))
     U8 -- False --> U10_11((10..11))
     U9 --> U10_11
+    U10_11 --> EndNode
 ```
 
 | Mã TC | Điều kiện con kích hoạt | Dữ liệu đầu vào (`idOrCode`) | Kết quả mong đợi |
@@ -785,10 +819,12 @@ flowchart TD
     NU9["9  all[idx] = updated"]
     NU10["10  emitEvent('MEDICINE_STOCK_UPDATED', { medicine: updated })"]
     NU11["11  return updated"]
+    ExitNode(((Điểm kết thúc)))
 
     NU1 -->|true| NU2
     NU2 -->|"(!existing)"| NU3
     NU2 -->|"~(!existing)"| NU4
+    NU3 -->|true| ExitNode
     NU4 -->|true| NU5
     NU5 -->|true| NU6
     NU6 -->|true| NU7
@@ -797,6 +833,7 @@ flowchart TD
     NU8 -->|"~(idx !== -1)"| NU10
     NU9 -->|true| NU10
     NU10 -->|true| NU11
+    NU11 -->|true| ExitNode
 ```
 
 ---
@@ -853,10 +890,14 @@ function executeDeleteMedicine(idOrCode) {
 
 ```mermaid
 flowchart TD
-    D1((1)) --> D2((2))
+    Start([Bắt đầu]) --> D1((1))
+    D1 --> D2((2))
     
     D2 -- True --> D3((3))
     D2 -- False --> D4_7((4..7))
+    
+    D3 --> EndNode(((Điểm kết thúc)))
+    D4_7 --> EndNode
 ```
 
 - **Phân tích Cyclomatic $V(G)$:**
@@ -890,13 +931,16 @@ flowchart TD
     ND5["5  idx = all.findIndex(...)"]
     ND6["6  deleted = all.splice(idx, 1)[0]"]
     ND7["7  return deleted"]
+    ExitNode(((Điểm kết thúc)))
 
     ND1 -->|true| ND2
     ND2 -->|"(!existing)"| ND3
     ND2 -->|"~(!existing)"| ND4
+    ND3 -->|true| ExitNode
     ND4 -->|true| ND5
     ND5 -->|true| ND6
     ND6 -->|true| ND7
+    ND7 -->|true| ExitNode
 ```
 
 ---

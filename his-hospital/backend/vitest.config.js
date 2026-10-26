@@ -4,7 +4,11 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["test/unitTest_NUnitStyle_3ChucNang.test.js"],
+    include: [
+      "test/unitTest_NUnitStyle_3ChucNang.test.js",
+      "test/khanh/validators/*.test.js",
+      "test/vuong/validators/*.test.js"
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

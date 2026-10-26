@@ -151,21 +151,29 @@ Trong đồ thị C1/C2, mỗi cấu trúc rẽ nhánh `if` được xem như **
 - **Đỉnh 15:** Điểm quyết định kiểm tra trạng thái bệnh nhân: `(patient && patient.status === "Chờ thanh toán")`.
 - **Đỉnh 16:** Khối cập nhật trạng thái bệnh nhân thành `"Đã khám"` và phát sự kiện `PATIENT_STATUS_CHANGED`.
 - **Đỉnh 17-18:** Khối phát sự kiện `INVOICE_PAID` và `return invoice` $\rightarrow$ Kết thúc thành công.
+- **Đỉnh Exit (Kết thúc):** Điểm kết thúc của hàm (hội tụ cả các nhánh kết thúc sớm do ném ngoại lệ và nhánh trả về thành công).
 
 ```mermaid
 flowchart TD
-    1((1)) --> 2((2))
+    Start([Bắt đầu]) --> 1((1))
+    1 --> 2((2))
     
     2 -- True --> 3((3))
     2 -- False --> 4((4))
+    
+    3 --> EndNode(((Điểm kết thúc)))
     
     4 --> 5((5))
     
     5 -- True --> 6((6))
     5 -- False --> 7((7))
     
+    6 --> EndNode
+    
     7 --> 8((8))
     7 -- False --> 9((9))
+    
+    8 --> EndNode
     
     9 --> 10((10))
     
@@ -185,6 +193,7 @@ flowchart TD
     15 -- False --> 17_18((17))
     
     16 --> 17_18
+    17_18 --> EndNode
 ```
 
 ---
@@ -267,7 +276,8 @@ Tại độ đo C3, các biểu thức điều kiện phức hợp được tác
 
 ```mermaid
 flowchart TD
-    1((1)) --> 2a((2a))
+    Start([Bắt đầu]) --> 1((1))
+    1 --> 2a((2a))
     
     2a -- True --> 3((3))
     2a -- False --> 2b((2b))
@@ -275,13 +285,19 @@ flowchart TD
     2b -- True --> 3
     2b -- False --> 4((4))
     
+    3 --> EndNode(((Điểm kết thúc)))
+    
     4 --> 5((5))
     
     5 -- True --> 6((6))
     5 -- False --> 7((7))
     
+    6 --> EndNode
+    
     7 -- True --> 8((8))
     7 -- False --> 9((9))
+    
+    8 --> EndNode
     
     9 --> 10a((10a))
     
@@ -307,6 +323,7 @@ flowchart TD
     15b -- True --> 16((16))
     
     16 --> 17_18
+    17_18 --> EndNode
 ```
 
 ---
@@ -452,6 +469,8 @@ flowchart TD
     N17["17  emitEvent(INVOICE_PAID);"]
     
     N18["18  return invoice;"]
+    
+    ExitNode(((Điểm kết thúc)))
 
     %% Các cạnh và nhãn điều kiện
     N1 -->|true| N2
@@ -459,13 +478,19 @@ flowchart TD
     N2 -->|"(!payment_method || !VALID_METHODS.includes(payment_method))"| N3
     N2 -->|"~(!payment_method || !VALID_METHODS.includes(payment_method))"| N4
     
+    N3 -->|true| ExitNode
+    
     N4 -->|true| N5
     
     N5 -->|"(!invoice)"| N6
     N5 -->|"~(!invoice)"| N7
     
+    N6 -->|true| ExitNode
+    
     N7 -->|"(invoice.status === 'PAID')"| N8
     N7 -->|"~(invoice.status === 'PAID')"| N9
+    
+    N8 -->|true| ExitNode
     
     N9 -->|true| N10
     
@@ -487,6 +512,7 @@ flowchart TD
     N16 -->|true| N17
     
     N17 -->|true| N18
+    N18 -->|true| ExitNode
 ```
 
 ---

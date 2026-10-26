@@ -7,8 +7,10 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "test": "node --test test/patientSearch.test.js test/cashierBilling.test.js test/doctorConsultation.test.js test/labPacs.test.js test/designPatternsAndRealtime.test.js test/unitTest_NUnitStyle_3ChucNang.test.js",
-    "test:unit": "node --test test/unitTest_NUnitStyle_3ChucNang.test.js",
+    "test": "node --test test/patientSearch.test.js test/cashierBilling.test.js test/doctorConsultation.test.js test/labPacs.test.js test/designPatternsAndRealtime.test.js test/unitTest_NUnitStyle_3ChucNang.test.js test/khanh/validators/01_receiveOrder.test.js test/khanh/validators/02_labResult.test.js test/khanh/validators/03_pacs.test.js",
+    "test:unit": "node --test test/unitTest_NUnitStyle_3ChucNang.test.js test/khanh/validators/01_receiveOrder.test.js test/khanh/validators/02_labResult.test.js test/khanh/validators/03_pacs.test.js",
+    "test:validate": "node --test test/khanh/validators/01_receiveOrder.test.js test/khanh/validators/02_labResult.test.js test/khanh/validators/03_pacs.test.js",
+    "test:vuong": "node --test test/vuong/validators/01_lapHoaDon.test.js test/vuong/validators/02_thanhToanHoaDon.test.js test/vuong/validators/03_quanLyThuoc.test.js",
     "test:vitest": "vitest run",
     "test:vitest:watch": "vitest",
     "test:ui": "vitest --ui --open",

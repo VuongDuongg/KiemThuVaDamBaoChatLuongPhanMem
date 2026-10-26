@@ -141,26 +141,36 @@ Trong đồ thị C1/C2, mỗi cấu trúc rẽ nhánh `if` được xem như **
 - **Đỉnh 18a:** Nhánh True của 17: `invoiceStatus = "PAID"`.
 - **Đỉnh 18b:** Nhánh False của 17: `invoiceStatus = "UNPAID"`.
 - **Đỉnh 19-22:** Khối tạo `newInvoice`, lưu DB, phát event và return $\rightarrow$ Kết thúc thành công.
+- **Đỉnh Exit (Kết thúc):** Điểm kết thúc của hàm (hội tụ cả các nhánh kết thúc sớm do ném ngoại lệ và nhánh kết thúc thành công).
 
 ```mermaid
 flowchart TD
-    1((1)) --> 2((2))
+    Start([Bắt đầu]) --> 1((1))
+    1 --> 2((2))
     
     2 -- True --> 3((3))
     2 -- False --> 4((4))
+    
+    3 --> EndNode(((Điểm kết thúc)))
     
     4 --> 5((5))
     
     5 -- True --> 6((6))
     5 -- False --> 7((7))
     
+    6 --> EndNode
+    
     7 --> 8((8))
     
     8 -- True --> 9((9))
     8 -- False --> 10((10))
     
+    9 --> EndNode
+    
     10 -- True --> 11((11))
     10 -- False --> 12_16((12))
+    
+    11 --> EndNode
     
     12_16 --> 17((17))
     
@@ -169,6 +179,7 @@ flowchart TD
     
     18a --> 19_22((19))
     18b --> 19_22
+    19_22 --> EndNode
 ```
 
 ---
@@ -246,7 +257,8 @@ Tại độ đo C3, các biểu thức điều kiện phức hợp được tác
 
 ```mermaid
 flowchart TD
-    1((1)) --> 2a((2a))
+    Start([Bắt đầu]) --> 1((1))
+    1 --> 2a((2a))
     
     2a -- True --> 3((3))
     2a -- False --> 2b((2b))
@@ -260,6 +272,8 @@ flowchart TD
     2d -- True --> 3
     2d -- False --> 4((4))
     
+    3 --> EndNode(((Điểm kết thúc)))
+    
     4 --> 5a((5a))
     
     5a -- True --> 6((6))
@@ -268,13 +282,19 @@ flowchart TD
     5b -- True --> 6
     5b -- False --> 7((7))
     
+    6 --> EndNode
+    
     7 --> 8((8))
     
     8 -- True --> 9((9))
     8 -- False --> 10((10))
     
+    9 --> EndNode
+    
     10 -- True --> 11((11))
     10 -- False --> 12_16((12))
+    
+    11 --> EndNode
     
     12_16 --> 17a((17a))
     
@@ -286,6 +306,7 @@ flowchart TD
     
     18a --> 19_22((19))
     18b --> 19_22
+    19_22 --> EndNode
 ```
 
 ---
@@ -421,6 +442,8 @@ flowchart TD
     N15["15  newInvoice = { id, total_amount, patient_pay, status... }; invoiceRepository.create(newInvoice)"]
     
     N16["16  return newInvoice;"]
+    
+    ExitNode(((Điểm kết thúc)))
 
     %% Cạnh và điều kiện theo mẫu chuẩn
     N1 -->|true| N2
@@ -428,16 +451,23 @@ flowchart TD
     N2 -->|"(!patient_code || !patient_name || total_amount == undefined || total_amount == null)"| N3
     N2 -->|"~(!patient_code || !patient_name || total_amount == undefined || total_amount == null)"| N4
     
+    N3 -->|true| ExitNode
+    
     N4 -->|true| N5
     
     N5 -->|"(isNaN(total) || total <= 0)"| N6
     N5 -->|"~(isNaN(total) || total <= 0)"| N7
+    
+    N6 -->|true| ExitNode
     
     N7 -->|true| N8
     
     N8 -->|"(discount < 0)"| N9
     N8 -->|"(discount > total)"| N10
     N8 -->|"~((discount < 0) || (discount > total))"| N11
+    
+    N9 -->|true| ExitNode
+    N10 -->|true| ExitNode
     
     N11 -->|true| N12
     
@@ -448,6 +478,7 @@ flowchart TD
     N14 -->|true| N15
     
     N15 -->|true| N16
+    N16 -->|true| ExitNode
 ```
 
 ---
