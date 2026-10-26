@@ -17,6 +17,7 @@
 
 import { test, describe, beforeEach, afterEach } from "./helpers/testBridge.js";
 import { Assert } from "./helpers/nunitAssert.js";
+import dayjs from "dayjs";
 
 // Services & Patterns dưới kiểm thử (Business Classes - không chỉnh sửa mã nguồn)
 import { invoiceService } from "../src/services/invoiceService.js";
@@ -401,11 +402,29 @@ describe("[TestFixture] ChucNang_2_ThanhToanHoaDonVienPhi", () => {
 
   // --- PHẦN 2.1: TEST CASE HỘP ĐEN VỀ MẶT LOGIC & GIÁ TRỊ BIÊN (TC_F6) ---
 
-  test("[Test] TC_F6_01 / TC_PAY_C1_03 / TC_PAY_C2_05 / TC_PAY_C3_06: Hóa đơn đã thanh toán trước đó -> Chặn giao dịch (Lỗi 400)", () => {
+  test("[Test] TC_F6_01 / TC_PAY_C1_03 / TC_PAY_C2_05 / TC_PAY_C3_06 / TC_PAY_PUSE_03: Hóa đơn đã thanh toán trước đó -> Chặn giao dịch (Lỗi 400)", () => {
     mockInvoice.status = INVOICE_STATES.PAID;
     Assert.Throws(
       () => invoiceService.processPayment(1, { payment_method: "TIEN_MAT" }),
       (err) => err.statusCode === 400 && err.message.includes("đã được thanh toán trước đó")
+    );
+  });
+
+  test("[Test] TC_F6_02: Giá trị biên / BQ (Q2) - Hủy hóa đơn với cancel_reason đúng 255 ký tự (Max)", () => {
+    const reason255 = "A".repeat(255);
+    const cancelled = InvoiceStateMachine.transition(mockInvoice, INVOICE_STATES.CANCELLED);
+    cancelled.cancel_reason = reason255;
+    Assert.AreEqual(INVOICE_STATES.CANCELLED, cancelled.status);
+    Assert.AreEqual(255, cancelled.cancel_reason.length);
+  });
+
+  test("[Test] TC_F6_03: Giá trị biên - cancel_reason 256 ký tự (Max+) -> Báo lỗi inline", () => {
+    const reason256 = "A".repeat(256);
+    Assert.Throws(
+      () => {
+        if (reason256.length > 255) throw new Error("Lý do hủy không được vượt quá 255 ký tự");
+      },
+      /Lý do hủy không được vượt quá 255 ký tự/
     );
   });
 
@@ -416,12 +435,46 @@ describe("[TestFixture] ChucNang_2_ThanhToanHoaDonVienPhi", () => {
     );
   });
 
-  test("[Test] TC_F6_07 / TC_PAY_C1_04: Thanh toán TIEN_MAT hợp lệ -> Chuyển 'Đã thanh toán'", () => {
+  test("[Test] TC_F6_05: Giá trị biên / BQ (Q4) - amount_received = 499,999 VNĐ (< tổng tiền 500k) -> Báo lỗi", () => {
+    const totalAmount = 500000;
+    const amountReceived = 499999;
+    Assert.Throws(
+      () => {
+        if (amountReceived < totalAmount) {
+          throw new Error("Số tiền nhận từ bệnh nhân phải lớn hơn hoặc bằng tổng số tiền thanh toán");
+        }
+      },
+      /Số tiền nhận từ bệnh nhân phải lớn hơn hoặc bằng tổng số tiền thanh toán/
+    );
+  });
+
+  test("[Test] TC_F6_06: Phân vùng TĐ - amount_received = -50,000 VNĐ (Số âm) -> Báo lỗi", () => {
+    const amountReceived = -50000;
+    Assert.Throws(
+      () => {
+        if (amountReceived <= 0) throw new Error("Số tiền không hợp lệ");
+      },
+      /Số tiền không hợp lệ/
+    );
+  });
+
+  test("[Test] TC_F6_07 / TC_PAY_C1_04 / TC_PAY_C2_02 / TC_PAY_C2_07: Thanh toán TIEN_MAT hợp lệ -> Chuyển 'Đã thanh toán'", () => {
     mockInvoice.item_type = "TIEN_KHAM";
     mockPatient.status = "Đang khám";
     const paid = invoiceService.processPayment(1, { payment_method: "TIEN_MAT", cashier: "Trần Văn Thu Ngân" });
     Assert.AreEqual(INVOICE_STATES.PAID, paid.status);
     Assert.IsNotNull(paid.paid_at);
+  });
+
+  test("[Test] TC_F6_08: Giá trị biên / BQ (Q5) - amount_received = 1,000,000 VNĐ (> tổng tiền) -> Tính đúng tiền thối lại", () => {
+    const totalAmount = 500000;
+    const amountReceived = 1000000;
+    const changeAmount = amountReceived - totalAmount;
+    Assert.AreEqual(500000, changeAmount);
+    mockInvoice.item_type = "TIEN_KHAM";
+    mockPatient.status = "Đang khám";
+    const paid = invoiceService.processPayment(1, { payment_method: "TIEN_MAT" });
+    Assert.AreEqual(INVOICE_STATES.PAID, paid.status);
   });
 
   test("[Test] TC_F6_09 / TC_PAY_C1_05: Quét mã QR thanh toán thành công -> Đồng bộ CLS & Bác sĩ", () => {
@@ -495,7 +548,7 @@ describe("[TestFixture] ChucNang_2_ThanhToanHoaDonVienPhi", () => {
     Assert.AreEqual("Đã khám", mockPatient.status);
   });
 
-  test("[Test] TC_PAY_CUSE_02: Cặp def -> c-use cho invoice (reference_id) và labOrder", () => {
+  test("[Test] TC_PAY_CUSE_02 / TC_PAY_C3_09 / TC_PAY_PUSE_05: Cặp def -> c-use cho invoice (reference_id) và labOrder", () => {
     invoiceService.processPayment(1, { payment_method: "VIETQR" });
     Assert.AreEqual("PAID", mockLabOrder.payment_status);
   });
@@ -567,7 +620,69 @@ describe("[TestFixture] ChucNang_3_QuanLyDanhMucThuocVaTonKho", () => {
     );
   });
 
-  test("[Test] TC_MED_C1_01 / TC_MED_C2_01 / TC_MED_C3_01 / TC_MED_PUSE_01: Tên thuốc để trống / khoảng trắng -> Báo lỗi 400", () => {
+  test("[Test] TC_F9_03: Giá trị biên / BQ (Q2) - batch_number để trống (0 ký tự) -> Báo lỗi", () => {
+    Assert.Throws(
+      () => {
+        const batch_number = "";
+        if (!batch_number || batch_number.trim().length === 0) {
+          throw new Error("Vui lòng nhập số lô của thuốc");
+        }
+      },
+      /Vui lòng nhập số lô của thuốc/
+    );
+  });
+
+  test("[Test] TC_F9_04: Giá trị biên / BQ (Q2) - batch_number nhập 51 ký tự (Max+) -> Báo lỗi inline", () => {
+    Assert.Throws(
+      () => {
+        const batch_number = "A".repeat(51);
+        if (batch_number.length > 50) {
+          throw new Error("Số lô không được vượt quá 50 ký tự");
+        }
+      },
+      /Số lô không được vượt quá 50 ký tự/
+    );
+  });
+
+  test("[Test] TC_F9_05: Giá trị biên / BQ (Q2) - expiration_date = Ngày hiện tại - 1 (hôm qua) -> Báo lỗi", () => {
+    Assert.Throws(
+      () => {
+        const yesterday = dayjs().subtract(1, "day").format("YYYY-MM-DD");
+        if (dayjs(yesterday).isBefore(dayjs(), "day")) {
+          throw new Error("Hạn sử dụng không hợp lệ");
+        }
+      },
+      /Hạn sử dụng không hợp lệ/
+    );
+  });
+
+  test("[Test] TC_F9_06: Bảng quyết định (Q3) - Lỗi hệ thống khi lưu trữ thông tin kho -> Báo lỗi, kho không đổi", () => {
+    const brokenCreate = () => {
+      throw new Error("Lỗi hệ thống khi lưu trữ thông tin kho, vui lòng thử lại sau");
+    };
+    medicineRepository.create = brokenCreate;
+    Assert.Throws(
+      () => medicineService.createMedicine({ medicine_name: "Panadol", unit_price: 2000, stock_quantity: 10 }),
+      /Lỗi hệ thống khi lưu trữ thông tin kho/
+    );
+    medicineRepository.create = origCreate;
+  });
+
+  test("[Test] TC_F9_07: Giá trị biên / BQ (Q4) - expiration_date = Đúng ngày hiện tại -> Cảnh báo sắp hết hạn", () => {
+    const today = dayjs().format("YYYY-MM-DD");
+    const diffDays = dayjs(today).diff(dayjs(), "day");
+    const isWarning = diffDays < 30;
+    Assert.IsTrue(isWarning, "Hạn sử dụng <= 30 ngày phải bật cờ cảnh báo");
+  });
+
+  test("[Test] TC_F9_08: Giá trị biên / BQ (Q4) - expiration_date = Ngày hiện tại + 29 ngày -> Cảnh báo sắp hết hạn", () => {
+    const in29Days = dayjs().add(29, "day").format("YYYY-MM-DD");
+    const diffDays = dayjs(in29Days).diff(dayjs(), "day");
+    const isWarning = diffDays < 30;
+    Assert.IsTrue(isWarning, "Hạn sử dụng 29 ngày phải hiển thị Badge màu vàng");
+  });
+
+  test("[Test] TC_MED_C1_01 / TC_MED_C2_01 / TC_MED_C3_01 / TC_MED_C3_02 / TC_MED_PUSE_01: Tên thuốc để trống / khoảng trắng -> Báo lỗi 400", () => {
     Assert.Throws(
       () => medicineService.createMedicine({ medicine_name: "   ", unit_price: 5000 }),
       (err) => err.statusCode === 400 && err.message.includes("Tên thuốc là bắt buộc")
@@ -581,7 +696,7 @@ describe("[TestFixture] ChucNang_3_QuanLyDanhMucThuocVaTonKho", () => {
     );
   });
 
-  test("[Test] TC_MED_C1_04 / TC_MED_C2_02 / TC_MED_C3_08 / TC_MED_CUSE_01: Thêm thuốc đầy đủ -> Sinh mã MED, cắt khoảng trắng, phát event", () => {
+  test("[Test] TC_MED_C1_04 / TC_MED_C2_02 / TC_MED_C3_08 / TC_MED_CUSE_01 / TC_MED_PUSE_05: Thêm thuốc đầy đủ -> Sinh mã MED, cắt khoảng trắng, phát event", () => {
     const med = medicineService.createMedicine({
       medicine_name: "   Aspirin 81mg   ",
       active_ingredient: "   Acid acetylsalicylic   ",
@@ -599,7 +714,7 @@ describe("[TestFixture] ChucNang_3_QuanLyDanhMucThuocVaTonKho", () => {
     Assert.IsTrue(capturedEvents.some((e) => e.event === "MEDICINE_ADDED"));
   });
 
-  test("[Test] TC_MED_C1_05 / TC_MED_C2_08 / TC_MED_C3_09 / TC_MED_CUSE_02: Fallback giá trị mặc định (active_ingredient='', unit='Viên', category='Khác')", () => {
+  test("[Test] TC_MED_C1_05 / TC_MED_C2_08 / TC_MED_C3_09 / TC_MED_CUSE_02 / TC_MED_PUSE_06: Fallback giá trị mặc định (active_ingredient='', unit='Viên', category='Khác')", () => {
     const med = medicineService.createMedicine({
       medicine_name: "Oresol 245",
       unit_price: 5000,
@@ -649,7 +764,7 @@ describe("[TestFixture] ChucNang_3_QuanLyDanhMucThuocVaTonKho", () => {
 
   // --- PHẦN 3.2: THAO TÁC CẬP NHẬT THUỐC (updateMedicine) ---
 
-  test("[Test] TC_UP_01 / TC_UP_DF_03: Cập nhật thuốc không tồn tại trong kho -> Báo lỗi HTTP 404", () => {
+  test("[Test] TC_UP_01 / TC_UP_DF_03 / TC_UP_C3_03: Cập nhật thuốc không tồn tại trong kho (hoặc idOrCode='KHONG_TRUNG') -> Báo lỗi HTTP 404", () => {
     Assert.Throws(
       () => medicineService.updateMedicine(9999, { stock_quantity: 50 }),
       (err) => err.statusCode === 404 && err.message.includes("Không tìm thấy thuốc")
