@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    reporters: ["verbose"],
     include: [
       "test/unitTest_NUnitStyle_3ChucNang.test.js",
       "test/khanh/validators/*.test.js",
