@@ -12,9 +12,13 @@
     "test:validate": "node --test test/khanh/validators/01_receiveOrder.test.js test/khanh/validators/02_labResult.test.js test/khanh/validators/03_pacs.test.js",
     "test:khanh": "node --test test/khanh/validators/01_receiveOrder.test.js test/khanh/validators/02_labResult.test.js test/khanh/validators/03_pacs.test.js",
     "test:vuong": "node --test test/vuong/validators/01_lapHoaDon.test.js test/vuong/validators/02_thanhToanHoaDon.test.js test/vuong/validators/03_quanLyThuoc.test.js",
+    "test:anh": "node --test test/tuan_anh/validators/01_consultation.test.js test/tuan_anh/validators/02_labOrder.test.js test/tuan_anh/validators/03_prescription.test.js",
+    "test:thai": "node --test test/thai/validators/01_patientRegistration.test.js test/thai/validators/02_clinicAppointment.test.js test/thai/validators/03_queueDispatch.test.js",
     "test:vitest": "vitest run",
     "test:vitest:khanh": "vitest run test/khanh",
     "test:vitest:vuong": "vitest run test/vuong",
+    "test:vitest:anh": "vitest run test/tuan_anh",
+    "test:vitest:thai": "vitest run test/thai",
     "test:vitest:watch": "vitest",
     "test:ui": "vitest --ui --open",
     "test:coverage": "vitest run --coverage"
