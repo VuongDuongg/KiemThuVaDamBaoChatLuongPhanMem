@@ -9,7 +9,8 @@ export default defineConfig({
       "test/unitTest_NUnitStyle_3ChucNang.test.js",
       "test/khanh/validators/*.test.js",
       "test/vuong/validators/*.test.js",
-      "test/tuan_anh/validators/*.test.js"
+      "test/tuan_anh/validators/*.test.js",
+      "test/thai/validators/*.test.js"
     ],
     coverage: {
       provider: "v8",
