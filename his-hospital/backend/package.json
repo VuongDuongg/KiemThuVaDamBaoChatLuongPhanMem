@@ -21,7 +21,8 @@
     "test:vitest:thai": "vitest run test/thai",
     "test:vitest:watch": "vitest",
     "test:ui": "vitest --ui --open",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:vuong:coverage": "vitest run test/vuong --coverage"
   },
   "keywords": [],
   "author": "",
