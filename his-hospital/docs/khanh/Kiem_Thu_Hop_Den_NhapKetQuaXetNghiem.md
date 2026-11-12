@@ -29,6 +29,9 @@
   * [1.3 Bảng đặc tả chi tiết các trường dữ liệu đầu ra (Output Specification)](#13-bảng-đặc-tả-chi-tiết-các-trường-dữ-liệu-đầu-ra-output-specification)
 * [PHẦN II: DẪN DẮT LOGIC VÀ ÁP DỤNG CÁC KỸ THUẬT KIỂM THỬ HỘP ĐEN](#phần-ii-dẫn-dắt-logic-và-áp-dụng-các-kỹ-thuật-kiểm-thử-hộp-đen)
   * [2.1 Phương pháp luận và Quy trình dẫn dắt thiết kế ca kiểm thử](#21-phương-pháp-luận-và-quy-trình-dẫn-dắt-thiết-kế-ca-kiểm-thử)
+    * [2.1.1 Quy trình thiết kế 4 bước](#211-quy-trình-thiết-kế-4-bước)
+    * [2.1.2 Nguyên lý lựa chọn phương pháp kiểm thử theo bản chất ràng buộc](#212-nguyên-lý-lựa-chọn-phương-pháp-kiểm-thử-theo-bản-chất-ràng-buộc)
+    * [2.1.3 Bảng đối chiếu lý do lựa chọn phương pháp kiểm thử cho từng biến đầu vào](#213-bảng-đối-chiếu-lý-do-lựa-chọn-phương-pháp-kiểm-thử-cho-từng-biến-đầu-vào)
   * [2.2 Kỹ thuật 1: Phân vùng tương đương (Equivalence Partitioning - EP)](#22-kỹ-thuật-1-phân-vùng-tương-đương-equivalence-partitioning---ep)
   * [2.3 Kỹ thuật 2: Phân tích giá trị biên chuyên sâu (Boundary Value Analysis - BVA)](#23-kỹ-thuật-2-phân-tích-giá-trị-biên-chuyên-sâu-boundary-value-analysis---bva)
   * [2.4 Kỹ thuật 3: Bảng quyết định (Decision Table Testing - DT)](#24-kỹ-thuật-3-bảng-quyết-định-decision-table-testing---dt)
@@ -98,6 +101,7 @@ Bảng dưới đây đặc tả chuẩn xác 7 cột bắt buộc của các tr
 
 ### 2.1 Phương pháp luận và Quy trình dẫn dắt thiết kế ca kiểm thử
 
+#### 2.1.1 Quy trình thiết kế 4 bước
 Để xây dựng một bộ ca kiểm thử toàn diện, chặt chẽ và loại bỏ các dữ liệu kiểm thử cảm tính, quy trình phân tích được thực hiện theo chuỗi logic 4 bước khép kín:
 
 ```mermaid
@@ -113,6 +117,48 @@ flowchart TD
 2. **Từ Phân vùng đến Giá trị biên (BVA):** Xác định các tham số có tính liên tục hoặc đo lường được (`test_value`, `general_notes`) để khảo sát các điểm biên nhạy cảm $On$, $Off$, $In$, $Out$.
 3. **Từ Biên đến Bảng quyết định (DT):** Kết hợp các điều kiện logic giữa phân loại nhóm dịch vụ, trạng thái viện phí, tính hợp lệ của số đo và độ dài ghi chú.
 4. **Từ Bảng quyết định đến Đoán lỗi (EG):** Bổ sung các kịch bản ngoại lệ đặc thù của môi trường lập trình JavaScript (ép kiểu ngầm, hệ cơ số 16 Hex, giá trị đặc biệt `Infinity`, `NaN`) và quy trình xét nghiệm bệnh viện.
+
+#### 2.1.2 Nguyên lý lựa chọn phương pháp kiểm thử theo bản chất ràng buộc
+Trong kiểm thử phần mềm y tế và kiểm thử hộp đen (theo chuẩn ISTQB và các nguyên lý của Glenford Myers), **việc lựa chọn phương pháp kiểm thử cho một biến được quyết định hoàn toàn bởi Bản chất kiểu dữ liệu (Data Type) và Dạng ràng buộc logic (Constraint Type)**:
+
+1. **Ràng buộc Miền số thực liên tục & Ranh giới đơn ngặt ($test\_value > 0$):**
+   * *Bản chất:* Dữ liệu định lượng lâm sàng có tính thứ tự số học và bị chặn dưới bởi điều kiện ngặt $> 0$ (không tồn tại chỉ số sinh hóa bằng 0 hoặc âm).
+   * *Phương pháp:*
+     - **Phân vùng tương đương (EP):** Chia thành miền số thực dương hợp lệ và các miền vi phạm (số âm, số 0, chuỗi chữ, giá trị rỗng).
+     - **Phân tích giá trị biên (BVA):** **Bắt buộc áp dụng** tại ranh giới số học 0 ($Min- = -0.01$, $Min = 0$, $Min+ = 0.01$). Lỗi phổ biến nhất của lập trình viên là viết nhầm `>= 0` thay vì `> 0`, BVA là kỹ thuật duy nhất bắt được lỗi lệch 1 đơn vị (*Off-by-one*) này.
+2. **Ràng buộc Độ dài chuỗi văn bản có chặn trên ($0 \le len \le 500$):**
+   * *Bản chất:* Trường nhận xét (`general_notes`) có giới hạn lưu trữ tối đa 500 ký tự trong CSDL và cho phép để trống.
+   * *Phương pháp:*
+     - **EP:** Kiểm tra tính tùy chọn (cho phép chuỗi rỗng `""`).
+     - **BVA độ dài chuỗi:** Khảo sát các điểm biên ranh giới $0, 1, 499, 500, 501$ ký tự để đảm bảo hệ thống lưu trữ trọn vẹn và chống lỗi tràn bộ đệm cơ sở dữ liệu.
+3. **Ràng buộc Điều kiện tiên quyết & Danh mục hữu hạn rời rạc (`payment_status`, `order.status`):**
+   * *Bản chất:* Trạng thái viện phí (`"PAID"`) và trạng thái phiếu (`"PROCESSING"`) là các điều kiện tiên quyết kiểm tra tính hợp lệ của luồng nghiệp vụ trước khi cho phép nhập kết quả.
+   * *Phương pháp:*
+     - **EP (Set Partitioning):** Phân chia trạng thái hợp lệ và không hợp lệ.
+     - **Bảng quyết định (Decision Table):** Ma trận hóa toàn bộ các tổ hợp điều kiện logic để tránh bỏ sót kịch bản nghiệp vụ.
+     - *Không áp dụng BVA* vì tập trạng thái là các giá trị rời rạc, không có tính liên tục số học.
+4. **Ràng buộc Cấu trúc đối tượng phức hợp (`order: Object`):**
+   * *Bản chất:* Đối tượng phiếu chỉ định chứa nhiều thuộc tính phân loại (`id`, `type`).
+   * *Phương pháp:*
+     - **EP kiểm tra cấu trúc:** Kiểm tra đối tượng hợp lệ vs các trường hợp vi phạm tính toàn vẹn (bị thiếu trường `undefined`, đối tượng rỗng `{}`, hoặc sai phân hệ chuyên môn như `"PACS"`).
+5. **Ràng buộc Ép kiểu dữ liệu trong môi trường JavaScript (Type Coercion & Representation):**
+   * *Bản chất:* JavaScript có cơ chế tự động ép kiểu lỏng lẻo (`loose typing`), dẫn tới việc các chuỗi như `"0x10"` (Hex) có thể bị ép thành số 16, hoặc `"12.5A"` có thể bị đọc dở dang bởi `parseFloat()`.
+   * *Phương pháp:*
+     - **Đoán lỗi (Error Guessing):** Chủ động thiết kế các kịch bản thử nghiệm ngoại lệ với hệ Hex (`"0x10"`), chuỗi lẫn chữ (`"12.5A"`), giá trị `NaN`, `Infinity`, `boolean`, `array` để kiểm tra độ tin cậy và tính bền vững của hàm thẩm định dữ liệu (Validator).
+
+#### 2.1.3 Bảng đối chiếu lý do lựa chọn phương pháp kiểm thử cho từng biến đầu vào
+
+Dưới đây là bảng giải trình lý do khoa học tại sao mỗi biến với dạng ràng buộc tương ứng lại được gán cho một hoặc nhiều phương pháp kiểm thử hộp đen phù hợp (chi tiết triển khai các lớp tương đương, các điểm biên và kịch bản cụ thể được phân tích sâu ở các mục 2.2 đến 2.5 bên dưới):
+
+| STT | Tên biến | Kiểu dữ liệu & Ràng buộc | Phương pháp lựa chọn | Lý do lựa chọn phương pháp (Justification) |
+|:---:|:---|:---|:---|:---|
+| 1 | `order` | `Object`, bắt buộc, có `id > 0`, `type === "LAB"` | • **EP (Tính toàn vẹn cấu trúc)**<br>• **Bảng quyết định (DT)** | • **EP:** Đối tượng phức hợp đòi hỏi kiểm tra tính toàn vẹn khi thiếu dữ liệu (`undefined`), đối tượng rỗng `{}` hoặc sai nhóm phân hệ chuyên môn (`PACS`).<br>• **DT:** Phiếu chỉ định là điều kiện cổng đầu tiên trong bảng quyết định quy trình xét nghiệm. |
+| 2 | `test_value` | `Number` \| `String`, bắt buộc, số thực dương $> 0$ | • **EP (Miền số học)**<br>• **BVA (Biên ranh giới 0)**<br>• **Error Guessing (Ép kiểu JS)** | • **EP:** Bóc tách miền số thực dương hợp lệ và các miền vi phạm (âm, 0, chuỗi ký tự, rỗng).<br>• **BVA:** Bất đẳng thức ngặt $> 0$ tạo ra ranh giới toán học tại điểm 0. Cần BVA để phát hiện lỗi lập trình viên dùng sai toán tử `>=` tại các điểm ranh giới ($-0.01$, $0$, $0.01$).<br>• **EG:** Môi trường JavaScript có rủi ro ép kiểu ngầm (như `"0x10"`, `"12.5A"`, `NaN`, `Infinity`) nên bắt buộc dùng đoán lỗi để phòng thủ. |
+| 3 | `general_notes` | `String`, tùy chọn, $0 \le len \le 500$ ký tự | • **EP (Tính tùy chọn)**<br>• **BVA (Độ dài chuỗi)** | • **EP:** Kiểm tra tính tùy chọn của trường dữ liệu (cho phép bỏ trống `""` hoặc `null`).<br>• **BVA:** Ràng buộc độ dài chuỗi có chặn trên cố định trong CSDL ($len \le 500$) nên cần BVA khảo sát các ngưỡng biên ($0, 1, 499, 500, 501$ ký tự) để chống lỗi tràn bộ đệm. |
+| 4 | `technician` | `String`, tùy chọn, $1 \le len \le 50$ | • **EP + Kiểm thử giá trị mặc định** | • Trường tự động gán theo phiên làm việc của KTV xét nghiệm; chỉ cần EP để xác nhận hệ thống tự động gán giá trị mặc định hợp lệ khi không truyền tham số. |
+| 5 | `payment_status` | `String (Enum)`, bắt buộc `"PAID"` | • **EP (Set Partitioning)**<br>• **Bảng quyết định (DT)** | • Thuộc tập danh mục rời rạc nên **không áp dụng BVA**; dùng EP để phân biệt `"PAID"` và `"UNPAID"`. Kết hợp trong bảng quyết định để bảo đảm quy tắc tài chính: Chưa nộp viện phí thì không được nhập kết quả. |
+| 6 | `order.status` | `String (Enum)`, bắt buộc `"PROCESSING"` | • **EP (Trạng thái quy trình)**<br>• **Bảng quyết định (DT)** | • Xác nhận phiếu chỉ định đang ở đúng giai đoạn xử lý mẫu (đã tiếp nhận phân tích) trước khi nhập kết quả; ma trận hóa logic trong bảng quyết định. |
+| 7 | `parameters` | `Array<Object>`, mảng chi tiết thông số | • **EP + Error Guessing (Cảnh báo ngưỡng)** | • Kiểm tra định dạng mảng thông số chi tiết và áp dụng đoán lỗi để kiểm tra hành vi gắn cờ cảnh báo lâm sàng (`alert: "HIGH"/"LOW"`) khi chỉ số vượt dải tham chiếu bình thường. |
 
 ---
 
