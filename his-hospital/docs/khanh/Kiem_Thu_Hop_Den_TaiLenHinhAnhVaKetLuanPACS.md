@@ -29,6 +29,9 @@
   * [1.3 Bảng đặc tả chi tiết các trường dữ liệu đầu ra (Output Specification)](#13-bảng-đặc-tả-chi-tiết-các-trường-dữ-liệu-đầu-ra-output-specification)
 * [PHẦN II: DẪN DẮT LOGIC VÀ ÁP DỤNG CÁC KỸ THUẬT KIỂM THỬ HỘP ĐEN](#phần-ii-dẫn-dắt-logic-và-áp-dụng-các-kỹ-thuật-kiểm-thử-hộp-đen)
   * [2.1 Phương pháp luận và Quy trình dẫn dắt thiết kế ca kiểm thử](#21-phương-pháp-luận-và-quy-trình-dẫn-dắt-thiết-kế-ca-kiểm-thử)
+    * [2.1.1 Quy trình thiết kế 4 bước](#211-quy-trình-thiết-kế-4-bước)
+    * [2.1.2 Nguyên lý lựa chọn phương pháp kiểm thử theo bản chất ràng buộc](#212-nguyên-lý-lựa-chọn-phương-pháp-kiểm-thử-theo-bản-chất-ràng-buộc)
+    * [2.1.3 Bảng đối chiếu lý do lựa chọn phương pháp kiểm thử cho từng biến đầu vào](#213-bảng-đối-chiếu-lý-do-lựa-chọn-phương-pháp-kiểm-thử-cho-từng-biến-đầu-vào)
   * [2.2 Kỹ thuật 1: Phân vùng tương đương (Equivalence Partitioning - EP)](#22-kỹ-thuật-1-phân-vùng-tương-đương-equivalence-partitioning---ep)
   * [2.3 Kỹ thuật 2: Phân tích giá trị biên chuyên sâu (Boundary Value Analysis - BVA)](#23-kỹ-thuật-2-phân-tích-giá-trị-biên-chuyên-sâu-boundary-value-analysis---bva)
   * [2.4 Kỹ thuật 3: Bảng quyết định (Decision Table Testing - DT)](#24-kỹ-thuật-3-bảng-quyết-định-decision-table-testing---dt)
@@ -104,6 +107,7 @@ Bảng dưới đây đặc tả chuẩn xác 7 cột bắt buộc của các tr
 
 ### 2.1 Phương pháp luận và Quy trình dẫn dắt thiết kế ca kiểm thử
 
+#### 2.1.1 Quy trình thiết kế 4 bước
 Để bao phủ toàn bộ các góc khuất về định dạng tệp tin nhị phân và độ dài dữ liệu văn bản y khoa, quy trình phân tích được thiết kế theo chuỗi logic 4 bước:
 
 ```mermaid
@@ -119,6 +123,48 @@ flowchart TD
 2. **Từ Phân vùng đến Giá trị biên (BVA):** Xác định chính xác 3 trục số nhạy cảm: trục dung lượng tệp tin ($0$ đến $25\text{MB}$), trục độ dài mô tả ($10$ đến $2000$ ký tự) và trục độ dài kết luận ($5$ đến $1000$ ký tự) để khảo sát các điểm biên $Min-$, $Min$, $Min+$, $Max-$, $Max$, $Max+$.
 3. **Từ Biên đến Bảng quyết định (DT):** Xây dựng ma trận quyết định kết hợp đồng thời tính toàn vẹn của tệp ảnh, nghĩa vụ thanh toán viện phí, và các ràng buộc độ dài văn bản.
 4. **Từ Bảng quyết định đến Đoán lỗi (EG):** Thiết lập các kịch bản ngoại lệ tinh vi: danh sách nhiều tệp nhưng có tệp ẩn bị hỏng/sai đuôi, dung lượng mang giá trị phi số (`NaN`, `Infinity`), chuỗi khoảng trắng lừa gạt độ dài trước khi cắt tỉa.
+
+#### 2.1.2 Nguyên lý lựa chọn phương pháp kiểm thử theo bản chất ràng buộc
+Trong kỹ nghệ kiểm thử phần mềm y tế và hệ thống lưu trữ hình ảnh PACS (theo chuẩn quốc tế ISTQB và các tài liệu của Glenford Myers, Roger Pressman), **việc lựa chọn phương pháp kiểm thử cho một biến được quyết định hoàn toàn bởi Bản chất kiểu dữ liệu (Data Type) và Dạng ràng buộc logic (Constraint Type)** của biến đó:
+
+1. **Ràng buộc Miền số liên tục & Dung lượng tệp tin nhị phân ($0 < size \le 25\text{MB}$):**
+   * *Bản chất:* Dung lượng tệp tin được đo lường bằng số byte liên tục và có ranh giới 2 đầu ngặt ($0$ byte và $25\text{MB} = 26,214,400$ bytes).
+   * *Phương pháp:*
+     - **Phân vùng tương đương (EP):** Bóc tách thành miền dung lượng hợp lệ, miền vượt mức tối đa ($> 25\text{MB}$), miền rỗng/âm ($\le 0$), và giá trị phi số (`NaN`, `Infinity`).
+     - **Phân tích giá trị biên (BVA):** **Bắt buộc áp dụng** để kiểm tra các điểm biên ranh giới $0$ byte, $1$ byte, $25\text{MB}$, $25.1\text{MB}$ nhằm bắt lỗi lệch 1 đơn vị (*Off-by-one*) giữa `<` và `<=` và ngăn chặn nguy cơ tràn dung lượng máy chủ lưu trữ.
+2. **Ràng buộc Chuỗi văn bản bị chặn hai đầu kín $[Min, Max]$ (`image_description`, `diagnostic_conclusion`):**
+   * *Bản chất:* Độ dài chuỗi sau khi cắt tỉa khoảng trắng (`trim()`) phải nằm trong một đoạn kín cố định (Mô tả: $[10, 2000]$; Kết luận: $[5, 1000]$).
+   * *Phương pháp:*
+     - **EP:** Phân chia thành miền chuỗi rỗng `""`, chuỗi quá ngắn, chuỗi hợp lệ, và chuỗi quá dài.
+     - **BVA độ dài chuỗi:** Khảo sát đầy đủ tập điểm biên ranh giới 2 đầu: $Min-, Min, Min+, Max-, Max, Max+$ để đảm bảo đủ dữ kiện y khoa tối thiểu và chống tràn bộ nhớ CSDL.
+     - **Đoán lỗi (EG):** Kiểm tra chuỗi chỉ chứa toàn ký tự khoảng trắng để phát hiện lỗ hổng kiểm tra độ dài trước khi `trim()`.
+3. **Ràng buộc Danh sách tập hợp (Array / Collection - `image_files`):**
+   * *Bản chất:* Người dùng có thể tải lên một hoặc nhiều tệp cùng lúc ($length \ge 1$).
+   * *Phương pháp:*
+     - **BVA kích thước mảng:** Khảo sát $size = 0$ (mảng rỗng `[]` $\rightarrow$ Lỗi) và $size \ge 1$ (Hợp lệ).
+     - **Đoán lỗi toàn vẹn danh sách:** Kiểm thử kịch bản tải lên nhiều tệp trong đó tệp đầu hợp lệ nhưng tệp thứ hai bị hỏng hoặc sai đuôi để xác minh quy tắc xử lý toàn bộ hoặc hủy bỏ toàn bộ (*All-or-Nothing Integrity*).
+4. **Ràng buộc Tập định dạng mở rộng (File Extension Enum):**
+   * *Bản chất:* Phần mở rộng tên tệp chỉ được phép thuộc danh mục ảnh y tế: `.jpg`, `.jpeg`, `.png`, `.dcm` (DICOM).
+   * *Phương pháp:*
+     - **Phân vùng tương đương theo tập hợp (Set Partitioning):** Kiểm tra từng đuôi hợp lệ, kiểm tra không phân biệt chữ hoa/thường (`.DCM`), và chặn các tệp văn phòng/thực thi (`.pdf`, `.exe`).
+5. **Ràng buộc Điều kiện tiên quyết & Phân hệ chuyên môn (`order`, `payment_status`, `order.status`):**
+   * *Bản chất:* Các thuộc tính kiểm tra điều kiện cổng: phân hệ chuyên môn (`PACS`), trạng thái viện phí (`PAID`) và quy trình xử lý (`PROCESSING`).
+   * *Phương pháp:*
+     - **EP & Bảng quyết định (Decision Table):** Tổ hợp các điều kiện logic để bảo đảm hệ thống kiểm soát đúng trình tự nghiệp vụ trước khi lưu kết quả chẩn đoán hình ảnh.
+
+#### 2.1.3 Bảng đối chiếu lý do lựa chọn phương pháp kiểm thử cho từng biến đầu vào
+
+Dưới đây là bảng giải trình lý do khoa học tại sao mỗi biến với dạng ràng buộc tương ứng lại được gán cho một hoặc nhiều phương pháp kiểm thử hộp đen phù hợp (chi tiết triển khai các lớp tương đương, các điểm biên và kịch bản cụ thể được phân tích sâu ở các mục 2.2 đến 2.5 bên dưới):
+
+| STT | Tên biến | Kiểu dữ liệu & Ràng buộc | Phương pháp lựa chọn | Lý do lựa chọn phương pháp (Justification) |
+|:---:|:---|:---|:---|:---|
+| 1 | `image_files` | `Array<Object>`, bắt buộc, $\ge 1$ tệp, đuôi `.jpg/.jpeg/.png/.dcm`, $0 < size \le 25\text{MB}$ | • **EP (Định dạng & Dung lượng)**<br>• **BVA (Biên kích thước mảng & Dung lượng)**<br>• **Error Guessing (Tệp ẩn hỏng, NaN)** | • **EP:** Danh mục phần mở rộng là tập rời rạc (cần phân biệt đuôi ảnh y tế vs tệp văn phòng).<br>• **BVA:** Kích thước mảng có ranh giới tại 1 ($size = 0$ lỗi vs $size \ge 1$ hợp lệ). Dung lượng tệp là miền số học liên tục có 2 ranh giới chặt chẽ ($0$B và $25\text{MB}$) nên bắt buộc dùng BVA để bắt lỗi lệch 1 byte (*Off-by-one*).<br>• **EG:** Đoán lỗi tệp thứ hai bị hỏng trong danh sách nhiều tệp và giá trị `NaN`/`Infinity`. |
+| 2 | `image_description` | `String`, bắt buộc, $10 \le len \le 2000$ ký tự sau `trim()` | • **EP (Tính hợp lệ)**<br>• **BVA (Biên độ dài 2 đầu kín)**<br>• **Error Guessing (Khoảng trắng ẩn)** | • **EP:** Bóc tách miền hợp lệ và các miền vi phạm (rỗng, quá ngắn, quá dài).<br>• **BVA:** Miền độ dài có cả chặn dưới (10) và chặn trên (2000) nên cần BVA khảo sát 2 đầu ranh giới ($0, 9, 10, 11$ và $1999, 2000, 2001$) để vừa bảo đảm đủ dữ liệu chuyên môn vừa chống tràn CSDL.<br>• **EG:** Đoán lỗi chuỗi toàn khoảng trắng. |
+| 3 | `diagnostic_conclusion` | `String`, bắt buộc, $5 \le len \le 1000$ ký tự sau `trim()` | • **EP (Tính hợp lệ)**<br>• **BVA (Biên độ dài 2 đầu kín)**<br>• **Error Guessing (Khoảng trắng ẩn)** | • **EP:** Phân loại chuỗi hợp lệ và không hợp lệ.<br>• **BVA:** Ràng buộc đoạn kín $[5, 1000]$ đòi hỏi BVA tại các điểm biên ranh giới ($0, 4, 5, 6$ và $999, 1000, 1001$) để kiểm soát tính súc tích của kết luận y khoa.<br>• **EG:** Đoán lỗi chuỗi khoảng trắng lách luật độ dài. |
+| 4 | `order` | `Object`, bắt buộc, có `id > 0`, `type === "PACS"` | • **EP (Tính toàn vẹn cấu trúc)**<br>• **Bảng quyết định (DT)** | • **EP:** Đối tượng phức hợp cần kiểm tra tính hợp lệ khi thiếu trường (`undefined`), đối tượng rỗng `{}` hoặc gửi nhầm phiếu của phân hệ xét nghiệm máu (`"LAB"`).<br>• **DT:** Điều kiện tiên quyết trong bảng quyết định luồng CĐHA. |
+| 5 | `payment_status` | `String (Enum)`, bắt buộc `"PAID"` | • **EP (Set Partitioning)**<br>• **Bảng quyết định (DT)** | • Thuộc tập danh mục rời rạc nên **không áp dụng BVA**; dùng EP phân biệt `"PAID"` và `"UNPAID"`. Kết hợp trong bảng quyết định để bảo đảm quy tắc: Chưa nộp viện phí thì chặn tải kết quả. |
+| 6 | `order.status` | `String (Enum)`, bắt buộc `"PROCESSING"` | • **EP (Trạng thái quy trình)**<br>• **Bảng quyết định (DT)** | • Xác nhận phiếu chỉ định đã được tiếp nhận chụp chiếu trước khi nhập biên bản kết luận; kết hợp trong bảng quyết định. |
+| 7 | `technician` | `String`, tùy chọn, $1 \le len \le 50$ | • **EP + Kiểm thử giá trị mặc định** | • Trường tự động gán từ tài khoản đăng nhập của Bác sĩ CĐHA, chỉ cần kiểm tra cơ chế nhận giá trị mặc định hợp lệ khi người dùng không truyền. |
 
 ---
 

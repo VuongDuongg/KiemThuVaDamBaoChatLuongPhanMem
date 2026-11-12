@@ -25,6 +25,9 @@
   * [1.3 Bảng đặc tả chi tiết các trường dữ liệu đầu ra (Output Specification)](#13-bảng-đặc-tả-chi-tiết-các-trường-dữ-liệu-đầu-ra-output-specification)
 * [PHẦN II: DẪN DẮT LOGIC VÀ ÁP DỤNG CÁC KỸ THUẬT KIỂM THỬ HỘP ĐEN](#phần-ii-dẫn-dắt-logic-và-áp-dụng-các-kỹ-thuật-kiểm-thử-hộp-đen)
   * [2.1 Phương pháp luận và Quy trình dẫn dắt thiết kế](#21-phương-pháp-luận-và-quy-trình-dẫn-dắt-thiết-kế)
+    * [2.1.1 Quy trình thiết kế 4 bước](#211-quy-trình-thiết-kế-4-bước)
+    * [2.1.2 Nguyên lý lựa chọn phương pháp kiểm thử theo bản chất ràng buộc](#212-nguyên-lý-lựa-chọn-phương-pháp-kiểm-thử-theo-bản-chất-ràng-buộc)
+    * [2.1.3 Bảng ánh xạ phương pháp kiểm thử chi tiết cho từng biến đầu vào](#213-bảng-ánh-xạ-phương-pháp-kiểm-thử-chi-tiết-cho-từng-biến-đầu-vào)
   * [2.2 Kỹ thuật 1: Phân vùng tương đương (Equivalence Partitioning - EP)](#22-kỹ-thuật-1-phân-vùng-tương-đương-equivalence-partitioning---ep)
   * [2.3 Kỹ thuật 2: Phân tích giá trị biên (Boundary Value Analysis - BVA)](#23-kỹ-thuật-2-phân-tích-giá-trị-biên-boundary-value-analysis---bva)
   * [2.4 Kỹ thuật 3: Bảng quyết định (Decision Table Testing - DT)](#24-kỹ-thuật-3-bảng-quyết-định-decision-table-testing---dt)
@@ -95,6 +98,8 @@ Hàm nghiệp vụ `createInvoice(payload)` tiếp nhận dữ liệu yêu cầu
 ## PHẦN II: DẪN DẮT LOGIC VÀ ÁP DỤNG CÁC KỸ THUẬT KIỂM THỬ HỘP ĐEN
 
 ### 2.1 Phương pháp luận và Quy trình dẫn dắt thiết kế
+
+#### 2.1.1 Quy trình thiết kế 4 bước
 Để bộ ca kiểm thử đạt tính khoa học, bao phủ tối đa lỗi và không chọn bừa dữ liệu, quy trình phân tích được thực hiện theo chuỗi logic 4 bước:
 
 ```mermaid
@@ -105,6 +110,54 @@ flowchart TD
     D --> E["Bước 4: Đoán lỗi (Error Guessing)<br>(Bắt lỗi ép kiểu ngầm, BHYT 100%)"]
     E --> F["BẢNG TRUY VẾT & TỔNG HỢP TEST SUITE"]
 ```
+
+#### 2.1.2 Nguyên lý lựa chọn phương pháp kiểm thử theo bản chất ràng buộc
+Trong kỹ nghệ kiểm thử phần mềm (theo chuẩn quốc tế ISTQB và tài liệu kiểm thử của Glenford Myers, Roger Pressman), **việc lựa chọn phương pháp kiểm thử cho một biến không phải là sự lựa chọn ngẫu nhiên, mà hoàn toàn được quyết định bởi Bản chất kiểu dữ liệu (Data Type) và Dạng ràng buộc logic (Constraint Type)** của biến đó:
+
+1. **Ràng buộc Miền số liên tục / Có thứ tự (Continuous / Ordered Numeric Range):**
+   * *Bản chất:* Dữ liệu số có thể so sánh thứ tự lớn hơn / nhỏ hơn (`>`, `<`, `>=`, `<=`).
+   * *Phương pháp:*
+     - **Phân vùng tương đương (EP):** Bóc tách thành miền hợp lệ ($In-range$) và các miền không hợp lệ ($Under-range$, $Over-range$, $Non-numeric$).
+     - **Phân tích giá trị biên (BVA):** **Bắt buộc áp dụng**, vì lỗi lập trình thường tập trung cao nhất tại các điểm ranh giới do lập trình viên nhầm lẫn giữa `>` và `>=`, `<` và `<=`. Khảo sát tập điểm chuẩn: $Min-, Min, Min+, Max-, Max, Max+$.
+2. **Ràng buộc Phụ thuộc chéo giữa nhiều biến (Cross-field Relational Dependency):**
+   * *Bản chất:* Miền giá trị hợp lệ của biến này bị khống chế động bởi giá trị thực tế của biến khác (ví dụ: $0 \le insurance\_discount \le total\_amount$).
+   * *Phương pháp:*
+     - **BVA phụ thuộc động (Dynamic BVA):** Điểm biên trên không cố định mà thay đổi theo biến cơ sở ($Max = total$, $Max- = total - 1$, $Max+ = total + 1$).
+     - **Bảng quyết định (Decision Table Testing):** Lập ma trận kết hợp các điều kiện ràng buộc đồng thời để kiểm tra các tổ hợp logic phức tạp.
+3. **Ràng buộc Tập hữu hạn rời rạc (Discrete Set / Enumeration):**
+   * *Bản chất:* Dữ liệu chỉ được phép nhận một trong các giá trị danh mục cố định (Enum), không có tính liên tục số học.
+   * *Phương pháp:*
+     - **Phân vùng tương đương theo tập hợp (Set Partitioning):** Mỗi giá trị hợp lệ trong danh mục là một lớp tương đương hợp lệ riêng biệt; mọi giá trị nằm ngoài danh mục gom thành một lớp không hợp lệ.
+     - **Kiểm thử chuyển trạng thái (State Transition):** Dùng khi giá trị Enum quyết định trực tiếp luồng chuyển trạng thái của đối tượng (ví dụ: `payment_method` quyết định hóa đơn sang `UNPAID` hay `PAID`).
+     - *Không áp dụng BVA* vì tập rời rạc không có thứ tự liên tục liền kề.
+4. **Ràng buộc Tính bắt buộc và Độ dài chuỗi (Mandatory & String Length):**
+   * *Bản chất:* Chuỗi ký tự có độ dài bị chặn trong khoảng $[min\_len, max\_len]$ và không được để trống.
+   * *Phương pháp:*
+     - **EP kiểm tra tính toàn vẹn (Nullability EP):** Kiểm tra các trường hợp vi phạm tính bắt buộc: `undefined` (thiếu trường), `null` (giá trị rỗng), chuỗi rỗng `""`, chuỗi toàn khoảng trắng `"   "`.
+     - **BVA độ dài chuỗi (String Length BVA):** Khảo sát các điểm biên độ dài: $0$ ký tự, $1$ ký tự, $max$ ký tự, $max + 1$ ký tự.
+     - **Đoán lỗi (Error Guessing):** Thử các ký tự đặc biệt, ký tự điều khiển, SQL Injection/XSS.
+5. **Ràng buộc Tập hợp danh sách (Array / Collection):**
+   * *Bản chất:* Mảng danh sách các khoản mục dịch vụ cần thu phí ($items.length \ge 1$).
+   * *Phương pháp:*
+     - **BVA trên kích thước mảng (Collection Size BVA):** Khảo sát kích thước mảng: $size = 0$ (mảng rỗng `[]` $\rightarrow$ Lỗi), $size = 1$ (1 phần tử $\rightarrow$ Hợp lệ tối thiểu), $size > 1$ (nhiều phần tử $\rightarrow$ Danh định).
+
+#### 2.1.3 Bảng đối chiếu lý do lựa chọn phương pháp kiểm thử cho từng biến đầu vào
+
+Dưới đây là bảng giải trình lý do khoa học tại sao mỗi biến với dạng ràng buộc tương ứng lại được gán cho một hoặc nhiều phương pháp kiểm thử hộp đen phù hợp (chi tiết triển khai các lớp tương đương, các điểm biên và kịch bản cụ thể được phân tích sâu ở các mục 2.2 đến 2.5 bên dưới):
+
+| STT | Tên biến | Kiểu dữ liệu & Ràng buộc | Phương pháp lựa chọn | Lý do lựa chọn phương pháp (Justification) |
+|:---:|:---|:---|:---|:---|
+| 1 | `patient_code` | `String`, bắt buộc, định dạng chữ/số, độ dài $\le 20$ ký tự | • **EP (Tính toàn vẹn)**<br>• **BVA (Độ dài chuỗi)**<br>• **Error Guessing (EG)** | • **EP:** Ràng buộc bắt buộc đòi hỏi kiểm tra các trường hợp thiếu dữ liệu (`undefined`, `null`, `""`).<br>• **BVA:** Độ dài chuỗi có chặn trên cố định ($len \le 20$) nên cần kiểm tra các điểm biên độ dài ranh giới ($0, 1, 20, 21$).<br>• **EG:** Dạng chuỗi định danh cần đoán lỗi với các ký tự đặc biệt vi phạm regex. |
+| 2 | `patient_name` | `String`, bắt buộc, tối đa 50 ký tự | • **EP (Tính toàn vẹn)**<br>• **BVA (Độ dài chuỗi)** | • **EP:** Tương tự mã bệnh nhân, kiểm tra tính bắt buộc phải nhập dữ liệu.<br>• **BVA:** Ràng buộc độ dài chuỗi có chặn trên cố định ($len \le 50$) nên cần kiểm tra ranh giới độ dài ($0, 1, 50, 51$). |
+| 3 | `total_amount` | `Number`, bắt buộc, số thực $> 0$ | • **EP (Miền số học)**<br>• **BVA (Biên 1 đầu ranh giới 0)** | • **EP:** Dữ liệu số học có điều kiện phân tách miền rõ ràng (số dương, số 0, số âm, không phải số).<br>• **BVA:** Ràng buộc bất đẳng thức ngặt ($total > 0$) tạo ra một ranh giới số học tại điểm 0. Cần BVA để phát hiện lỗi lệch 1 đơn vị (*Off-by-one*) do lập trình viên nhầm lẫn giữa `>` và `>=`. |
+| 4 | `insurance_discount` | `Number`, tùy chọn, $0 \le discount \le total\_amount$ | • **EP (Miền số học)**<br>• **BVA (Biên kép phụ thuộc)**<br>• **Bảng quyết định (DT)** | • **EP:** Phân tách miền hợp lệ và các miền vi phạm (số âm, vượt quá tổng tiền).<br>• **BVA:** Có 2 đầu ranh giới (biên 0 và biên $total\_amount$). Biên trên là biên động chạy theo `total_amount` nên cần BVA phụ thuộc.<br>• **DT:** Có mối quan hệ phụ thuộc chéo giữa 2 biến (`insurance_discount` phụ thuộc `total_amount`) nên cần ma trận bảng quyết định để bao phủ toàn bộ các tổ hợp logic tài chính. |
+| 5 | `insurance_percent` | `Number`, tính tự động ($0$ hoặc $80$) | • **EP (Danh mục thực tế)** | • Trường được hệ thống tự tính toán từ thẻ BHYT trong hồ sơ, không cho người dùng tự gõ trên giao diện nên không cần BVA, chỉ cần EP để xác nhận 2 giá trị nghiệp vụ thực tế. |
+| 6 | `item_type` | `String (Enum)`, nhận 1 trong 3 danh mục | • **EP (Set Partitioning)**<br>• **Kiểm thử giá trị mặc định** | • Ràng buộc thuộc tập hữu hạn rời rạc, không có tính liên tục số học nên **không áp dụng BVA**. EP được dùng để phân chia các danh mục hợp lệ và kiểm tra cơ chế gán giá trị mặc định khi để trống. |
+| 7 | `payment_method` | `String (Enum)`, danh mục PTTT | • **EP (Set Partitioning)**<br>• **Chuyển trạng thái (State Transition)** | • Tập rời rạc nên dùng EP để bắt các giá trị ngoài danh mục. Đồng thời, giá trị của trường này kích hoạt chuyển đổi trạng thái của hóa đơn (`UNPAID` vs `PAID`) nên cần kiểm thử chuyển trạng thái. |
+| 8 | `description` | `String`, tùy chọn, tối đa 255 ký tự | • **BVA (Độ dài chuỗi)**<br>• **Kiểm thử giá trị mặc định** | • BVA áp dụng để kiểm tra nguy cơ tràn bộ đệm tại ngưỡng tối đa 255 ký tự ($len \in \{0, 1, 255, 256\}$), đồng thời kiểm tra tự động điền nội dung mặc định khi để trống. |
+| 9 | `cashier` | `String`, tùy chọn, tối đa 50 ký tự | • **EP + Giá trị mặc định** | • Kiểm tra cơ chế tự động ghi nhận danh tính thu ngân theo phiên làm việc (nếu truyền thì nhận, không truyền thì lấy mặc định). |
+| 10 | `items` | `Array<Object>`, bắt buộc $\ge 1$ dịch vụ | • **BVA trên kích thước mảng** | • Ràng buộc số lượng phần tử trong tập hợp ($length \ge 1$) có ranh giới rõ ràng tại 1 nên áp dụng BVA trên kích thước mảng ($size = 0$ lỗi vs $size \ge 1$ hợp lệ). |
+| 11 | `reference_id` | `String` \| `null`, mã chỉ định CLS liên kết | • **EP + Error Guessing** | • EP kiểm tra trường hợp có mã vs không có mã (`null`). Đoán lỗi (EG) được áp dụng để kiểm tra mã tham chiếu ảo nhằm đảm bảo tính bền vững (Robustness), không làm sập hệ thống khi không tìm thấy phiếu gốc. |
 
 ---
 

@@ -27,6 +27,9 @@
   * [1.3 Bảng đặc tả chi tiết các trường dữ liệu đầu ra (Output Specification)](#13-bảng-đặc-tả-chi-tiết-các-trường-dữ-liệu-đầu-ra-output-specification)
 * [PHẦN II: DẪN DẮT LOGIC VÀ ÁP DỤNG CÁC KỸ THUẬT KIỂM THỬ HỘP ĐEN](#phần-ii-dẫn-dắt-logic-và-áp-dụng-các-kỹ-thuật-kiểm-thử-hộp-đen)
   * [2.1 Phương pháp luận và Quy trình dẫn dắt thiết kế](#21-phương-pháp-luận-và-quy-trình-dẫn-dắt-thiết-kế)
+    * [2.1.1 Quy trình thiết kế 4 bước](#211-quy-trình-thiết-kế-4-bước)
+    * [2.1.2 Nguyên lý lựa chọn phương pháp kiểm thử theo bản chất ràng buộc](#212-nguyên-lý-lựa-chọn-phương-pháp-kiểm-thử-theo-bản-chất-ràng-buộc)
+    * [2.1.3 Bảng đối chiếu lý do lựa chọn phương pháp kiểm thử cho từng biến đầu vào](#213-bảng-đối-chiếu-lý-do-lựa-chọn-phương-pháp-kiểm-thử-cho-từng-biến-đầu-vào)
   * [2.2 Kỹ thuật 1: Phân vùng tương đương (Equivalence Partitioning - EP)](#22-kỹ-thuật-1-phân-vùng-tương-đương-equivalence-partitioning---ep)
   * [2.3 Kỹ thuật 2: Phân tích giá trị biên chuyên sâu (Boundary Value Analysis - BVA)](#23-kỹ-thuật-2-phân-tích-giá-trị-biên-chuyên-sâu-boundary-value-analysis---bva)
   * [2.4 Kỹ thuật 3: Bảng quyết định (Decision Table Testing - DT)](#24-kỹ-thuật-3-bảng-quyết-định-decision-table-testing---dt)
@@ -102,6 +105,7 @@ Bảng dưới đây đặc tả chuẩn xác 7 cột bắt buộc của các tr
 
 ### 2.1 Phương pháp luận và Quy trình dẫn dắt thiết kế
 
+#### 2.1.1 Quy trình thiết kế 4 bước
 Để xây dựng một bộ ca kiểm thử khoa học, chặt chẽ và đạt độ bao phủ tối ưu, quy trình phân tích kiểm thử hộp đen cho chức năng **Thanh toán hóa đơn viện phí** được dẫn dắt theo chuỗi logic 4 bước khép kín:
 
 ```mermaid
@@ -117,6 +121,50 @@ flowchart TD
 2. **Từ Phân vùng đến Giá trị biên (BVA):** Xác định các tham số có tính thứ tự/đo lường được (`amount_received`, `cancel_reason`, vòng đời trạng thái) để khảo sát các điểm biên nhạy cảm $On$, $Off$, $In$, $Out$.
 3. **Từ Biên đến Bảng quyết định (DT):** Xử lý các mối quan hệ phụ thuộc chéo giữa trạng thái hóa đơn, phương thức thanh toán và số tiền khách đưa bằng ma trận quyết định logic.
 4. **Từ Bảng quyết định đến Đoán lỗi (EG):** Bổ sung các kịch bản ngoại lệ đặc thù của môi trường bệnh viện: thanh toán trùng (Double Spending), hóa đơn CLS mang mã ảo, người bệnh chưa kết thúc khám.
+
+#### 2.1.2 Nguyên lý lựa chọn phương pháp kiểm thử theo bản chất ràng buộc
+Trong kỹ nghệ kiểm thử phần mềm (theo chuẩn quốc tế ISTQB và các tài liệu của Glenford Myers, Roger Pressman), **việc lựa chọn phương pháp kiểm thử cho một biến được quyết định bởi Bản chất kiểu dữ liệu (Data Type) và Dạng ràng buộc logic (Constraint Type)** của biến đó:
+
+1. **Ràng buộc Miền số liên tục & Phụ thuộc động tài chính ($amount\_received \ge patient\_pay$):**
+   * *Bản chất:* Dữ liệu số tiền có tính thứ tự liên tục và có toán tử quan hệ so sánh (`>=`). Điểm ranh giới trên phụ thuộc động vào giá trị thực tế của biến khác (`patient_pay` trên từng hóa đơn).
+   * *Phương pháp:*
+     - **Phân vùng tương đương (EP):** Bóc tách thành miền đủ tiền ($amount \ge patient\_pay$), miền thiếu tiền ($0 < amount < patient\_pay$), và miền số không hợp lệ (số âm, số 0, phi số).
+     - **Phân tích giá trị biên (BVA):** Khảo sát 2 ranh giới: ranh giới cố định tại 0 và ranh giới động tại $patient\_pay$ ($Max- = patient\_pay - 1$, $Min = patient\_pay$, $Min+ = patient\_pay + 1$). BVA là bắt buộc để bắt lỗi lệch 1 đơn vị (*Off-by-one*) và kiểm tra tính toán tiền thối lại.
+2. **Ràng buộc Máy trạng thái hữu hạn & Vòng đời thực thể (Finite State Machine - FSM):**
+   * *Bản chất:* Trạng thái hóa đơn (`status`) quản lý quy trình chuyển đổi nghiêm ngặt từ `UNPAID` sang `PAID` hoặc `CANCELLED`.
+   * *Phương pháp:*
+     - **Kiểm thử chuyển trạng thái (State Transition Testing):** Kiểm tra đường chuyển trạng thái hợp lệ và kiểm tra chặn các chuyển dịch cấm (`PAID` $\rightarrow$ `PAID` - chống Double Payment, `CANCELLED` $\rightarrow$ `PAID`).
+     - **EP trạng thái:** Phân lớp các trạng thái hợp lệ và không hợp lệ của hóa đơn trước khi thanh toán.
+3. **Ràng buộc Tập hữu hạn rời rạc (Discrete Set / Enumeration):**
+   * *Bản chất:* Phương thức thanh toán (`payment_method`) chỉ được nhận một trong các giá trị danh mục: `"TIEN_MAT"`, `"VIETQR"`, `"THE"`, `"CHUYEN_KHOAN"`, không có tính thứ tự số học.
+   * *Phương pháp:*
+     - **Phân vùng tương đương theo tập hợp (Set Partitioning):** Mỗi phương thức hợp lệ là một lớp tương đương; các giá trị ngoài danh mục gom thành một lớp vi phạm.
+     - **Bảng quyết định (Decision Table):** Tổ hợp phương thức thanh toán với các điều kiện tài chính và trạng thái.
+     - *Không áp dụng BVA* vì tập danh mục rời rạc không có điểm biên liền kề.
+4. **Ràng buộc Tính bắt buộc và Độ dài chuỗi (Mandatory & String Length):**
+   * *Bản chất:* Lý do hủy (`cancel_reason`) có độ dài bị chặn trong khoảng $[1, 255]$ ký tự và bắt buộc nhập khi chọn hủy hóa đơn.
+   * *Phương pháp:*
+     - **EP kiểm tra tính bắt buộc:** Kiểm tra chuỗi rỗng `""` khi nhấn nút hủy.
+     - **BVA độ dài chuỗi:** Khảo sát các điểm biên độ dài ranh giới ($0, 1, 255, 256$ ký tự) để chống lỗi tràn bộ đệm cơ sở dữ liệu.
+5. **Ràng buộc Toàn vẹn tham chiếu & Đồng bộ liên phân hệ (`idOrCode`, `reference_id`, `patient_code`):**
+   * *Bản chất:* Khóa chính và khóa ngoại liên kết giữa Thu ngân, Cận lâm sàng và Hồ sơ người bệnh.
+   * *Phương pháp:*
+     - **EP kiểm tra tồn tại CSDL:** Hóa đơn có trong DB vs không tồn tại (HTTP 404).
+     - **Đoán lỗi & Kiểm thử tính bền vững (Error Guessing / Robustness):** Thử nghiệm với mã CLS tham chiếu bị sai lệch/không tồn tại hoặc bệnh nhân đang ở trạng thái đặc thù để bảo đảm luồng thanh toán viện phí vẫn hoàn tất mà không làm sập hệ thống (*Fault Tolerance*).
+
+#### 2.1.3 Bảng đối chiếu lý do lựa chọn phương pháp kiểm thử cho từng biến đầu vào
+
+Dưới đây là bảng giải trình lý do khoa học tại sao mỗi biến với dạng ràng buộc tương ứng lại được gán cho một hoặc nhiều phương pháp kiểm thử hộp đen phù hợp (chi tiết triển khai các lớp tương đương, các điểm biên và kịch bản cụ thể được phân tích sâu ở các mục 2.2 đến 2.5 bên dưới):
+
+| STT | Tên biến | Kiểu dữ liệu & Ràng buộc | Phương pháp lựa chọn | Lý do lựa chọn phương pháp (Justification) |
+|:---:|:---|:---|:---|:---|
+| 1 | `idOrCode` | `String` \| `Number`, bắt buộc, tồn tại trong DB, trạng thái `UNPAID` | • **EP (Tính toàn vẹn & Tồn tại CSDL)**<br>• **Kiểm thử chuyển trạng thái (FSM)**<br>• **Error Guessing (EG)** | • **EP:** Ràng buộc bắt buộc và khóa chính đòi hỏi kiểm tra các trường hợp thiếu mã (`undefined`, `null`, `""`) và mã ảo không có trong DB (lỗi 404).<br>• **FSM:** Trạng thái của hóa đơn quyết định quyền thanh toán, cần kiểm thử chuyển trạng thái để chặn lỗi thanh toán lặp (*Double Spending*) với HĐ đã `PAID` hoặc đã `CANCELLED`.<br>• **EG:** Đoán lỗi với các ID dị thường. |
+| 2 | `payment_method` | `String (Enum)`, bắt buộc, thuộc 4 danh mục hợp lệ | • **EP (Set Partitioning)**<br>• **Bảng quyết định (DT)** | • **EP:** Ràng buộc thuộc tập rời rạc hữu hạn nên **không áp dụng BVA**; dùng EP để kiểm tra từng danh mục hợp lệ và bắt các phương thức ngoài danh mục (như tiền ảo, ví điện tử chưa hỗ trợ).<br>• **DT:** Phương thức thanh toán là điều kiện rẽ nhánh quan trọng (tiền mặt cần kiểm tra tiền nhận; QR/Thẻ không cần) nên cần bảng quyết định để bao phủ toàn bộ nhánh logic. |
+| 3 | `amount_received` | `Number`, bắt buộc khi chọn Tiền mặt, $amount \ge patient\_pay$ | • **EP (Miền số học)**<br>• **BVA (Biên kép phụ thuộc động)**<br>• **Bảng quyết định (DT)** | • **EP:** Phân tách miền đủ tiền, miền thiếu tiền, số âm gian lận và chuỗi phi số.<br>• **BVA:** Dữ liệu số liên tục có điều kiện bất đẳng thức $\ge$ và biên trên phụ thuộc động vào `patient_pay` của từng hóa đơn. Cần BVA để phát hiện lỗi lệch 1 đơn vị (*Off-by-one*) giữa `>` và `>=` (thiếu 1 đồng, đủ tiền, thừa 1 đồng) và kiểm tra tính tiền thối lại.<br>• **DT:** Kết hợp đồng thời phương thức Tiền mặt và số tiền đưa. |
+| 4 | `cashier` | `String`, tùy chọn, $1 \le len \le 50$ | • **EP + Kiểm thử giá trị mặc định** | • Trường tự động gán từ phiên đăng nhập thu ngân, không phát sinh lỗi nhập liệu người dùng; chỉ cần kiểm tra cơ chế nhận mặc định khi không truyền tham số. |
+| 5 | `cancel_reason` | `String`, bắt buộc khi Hủy HĐ, $1 \le len \le 255$ ký tự | • **EP (Tính bắt buộc)**<br>• **BVA (Độ dài chuỗi)** | • **EP:** Kiểm tra vi phạm tính bắt buộc khi thu ngân nhấn Hủy nhưng để trống nội dung.<br>• **BVA:** Ràng buộc độ dài chuỗi có chặn trên cố định trong CSDL (255 ký tự) nên cần BVA để kiểm tra các điểm biên ranh giới ($0, 1, 255, 256$ ký tự) nhằm chống lỗi tràn bộ đệm. |
+| 6 | `reference_id` | `String` \| `null`, liên kết phiếu CLS khi là tiền cận lâm sàng | • **EP + Error Guessing (Tính bền vững)** | • Kiểm tra quy tắc nghiệp vụ tự động chuyển trạng thái phiếu CLS sang `PAID`. Đoán lỗi (EG) với mã chỉ định ảo để đảm bảo hệ thống không bị crash nếu dữ liệu tham chiếu bị lệch (*Fault Tolerance*). |
+| 7 | `patient_code` | `String`, mã bệnh nhân liên kết ngầm từ hóa đơn | • **EP + Error Guessing (Quy tắc luồng)** | • Kiểm tra cơ chế tự động chuyển trạng thái bệnh nhân sang "Đã khám" khi hoàn tất thanh toán, hoặc giữ nguyên trạng thái nếu bệnh nhân đang trong phiên khám của bác sĩ. |
 
 ---
 
